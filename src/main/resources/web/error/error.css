@@ -1,0 +1,19 @@
+header {
+    text-align: center;
+    font-size: 107px;
+}
+
+body {
+    color: #c13b32;
+    background: #e7e7e7;
+}
+
+#content {
+    text-align: center;
+}
+
+#error {
+    position: fixed;
+    font-size: 5%;
+    bottom: 2%;
+}
