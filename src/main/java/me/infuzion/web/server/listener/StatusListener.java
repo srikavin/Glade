@@ -1,5 +1,6 @@
 package me.infuzion.web.server.listener;
 
+import com.github.amr.mimetypes.MimeType;
 import com.github.amr.mimetypes.MimeTypes;
 import me.infuzion.web.server.EventListener;
 import me.infuzion.web.server.EventManager;
@@ -16,12 +17,17 @@ public class StatusListener implements EventListener {
 
     public StatusListener(EventManager eventManager) {
         mimeTypesInstance = MimeTypes.getInstance();
+        mimeTypesInstance.register(new MimeType("text/html", "jpl"));
         eventManager.registerListener(this, true);
     }
 
     @Override
     public void onPageLoad(PageLoadEvent event) {
-        if (event.getStatusCode() == 0) {
+        if (event.getStatusCode() != 200) {
+            if(event.getStatusCode() != 0){
+                handleStatus(event);
+                return;
+            }
             InputStream stream = getClass().getResourceAsStream("/web/" + event.getPage());
             if (stream != null) {
                 try {

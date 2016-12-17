@@ -1,0 +1,26 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    !{LET code=5}
+    <meta charset="UTF-8">
+    <title>!{ECHO {code}} !{GET{error}}</title>
+    <link rel="stylesheet" href="/error/error.css"/>
+</head>
+<body>
+<div id="content">
+    <header>welcome !{POST{name}}</header>
+    <h1>!{POST{text}}</h1>
+    <h1>!{ECHO {code}} + !{ECHO {code}} = !{CALC {!{ECHO {code}} + !{ECHO {code}}}}</h1>
+    <a href="javascript:location = '/?noredir'">jpl source</a> |
+    <a href="javascript:history.back()">back</a>
+    <div id="error">
+        There is nothing to see here
+    </div>
+    <form method="post" action="index.jpl">
+        <input name="name" placeholder="Name"><br>
+        <input name="text" placeholder="Text"><br>
+        <input type="submit">
+    </form>
+</div>
+</body>
+</html>

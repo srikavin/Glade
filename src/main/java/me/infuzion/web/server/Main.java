@@ -6,7 +6,7 @@ import java.net.ServerSocket;
 public class Main {
 
     public static void main(String[] args) throws IOException {
-        ServerSocket socket = new ServerSocket(90);
+        ServerSocket socket = new ServerSocket(80);
         Server server = new Server(socket);
         Thread serverThread = new Thread(server);
         serverThread.start();

@@ -12,5 +12,6 @@
     <orderEntry type="inheritedJdk" />
     <orderEntry type="sourceFolder" forTests="false" />
     <orderEntry type="library" name="Maven: com.github.amr:mimetypes:0.0.2" level="project" />
+    <orderEntry type="library" name="Maven: com.fathzer:javaluator:3.0.1" level="project" />
   </component>
 </module>
