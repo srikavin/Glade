@@ -3,22 +3,23 @@
 <head>
     !{LET code=5}
     <meta charset="UTF-8">
-    <title>!{ECHO {code}} !{GET{error}}</title>
-    <link rel="stylesheet" href="/error/error.css"/>
+    <title>!{ECHO {code}} !{GET{error}} !{CALC {(1+2)/2+3*(52*2000021)-10}}</title>
+    <style>
+        !{INCLUDE {/error/error.css}}
+    </style>
 </head>
 <body>
 <div id="content">
     <header>welcome !{POST{name}}</header>
-    <h1>!{POST{text}}</h1>
-    <h1>!{ECHO {code}} + !{ECHO {code}} = !{CALC {!{ECHO {code}} + !{ECHO {code}}}}</h1>
+    <h1>!{POST{text}} = !{CALC {!{POST{text}}}}</h1>
     <a href="javascript:location = '/?noredir'">jpl source</a> |
     <a href="javascript:history.back()">back</a>
     <div id="error">
-        There is nothing to see here
+        A web server written completely in Java.
     </div>
     <form method="post" action="index.jpl">
         <input name="name" placeholder="Name"><br>
-        <input name="text" placeholder="Text"><br>
+        <input name="text" placeholder="Math Problem ex: (2+2) * 3"><br>
         <input type="submit">
     </form>
 </div>

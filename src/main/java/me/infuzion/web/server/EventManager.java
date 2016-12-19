@@ -9,8 +9,8 @@ import java.util.ArrayList;
 import java.util.List;
 
 public class EventManager {
-    List<EventListener> eventListeners = new ArrayList<>();
-    List<EventListener> eventListenersMonitor = new ArrayList<>();
+    List<PageLoadListener> eventListeners = new ArrayList<>();
+    List<PageLoadListener> eventListenersMonitor = new ArrayList<>();
 
     public EventManager(){
         new StatusListener(this);
@@ -19,19 +19,19 @@ public class EventManager {
     }
 
     public void callEvent(PageLoadEvent event){
-        for(EventListener e: eventListeners){
+        for(PageLoadListener e: eventListeners){
             e.onPageLoad(event);
         }
-        for(EventListener e: eventListenersMonitor){
+        for(PageLoadListener e: eventListenersMonitor){
             e.onPageLoad(event);
         }
     }
 
-    public void registerListener(EventListener listener){
+    public void registerListener(PageLoadListener listener){
         eventListeners.add(listener);
     }
 
-    public void registerListener(EventListener listener, boolean monitor){
+    public void registerListener(PageLoadListener listener, boolean monitor){
         if(monitor) {
             eventListenersMonitor.add(listener);
         } else {

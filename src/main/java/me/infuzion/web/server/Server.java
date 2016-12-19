@@ -1,6 +1,7 @@
 package me.infuzion.web.server;
 
 import me.infuzion.web.server.event.PageLoadEvent;
+import me.infuzion.web.server.util.Utilities;
 
 import java.io.*;
 import java.net.ServerSocket;
@@ -51,69 +52,78 @@ public class Server implements Runnable {
         BufferedReader reader = new BufferedReader(new InputStreamReader(client.getInputStream()));
         PrintWriter writer = new PrintWriter(client.getOutputStream());
 
-        int contentLength = -1;
-        String page = "";
-        String hostName = "";
-        UUID sessionuuid = null;
-        while (true) {
-            final String line = reader.readLine();
-            if (line == null) {
-                return;
-            }
-            final String contentLengthStr = "Content-Length: ";
-            final String hostStr = "Host: ";
-            final String cookieStr = "Cookie: ";
-            if (line.startsWith(contentLengthStr)) {
-                contentLength = Integer.parseInt(line.substring(contentLengthStr.length()));
-                continue;
-            }
-            if (line.startsWith(hostStr)) {
-                hostName = line.substring(hostStr.length());
-                continue;
-            }
+        try {
 
-            if (line.startsWith(cookieStr)) {
-                String temp = line.substring(cookieStr.length());
-                String[] cookies = temp.split(";");
-                for (String e : cookies) {
-                    System.out.println(e);
-                    String[] cookie = e.split("=", 2);
-                    if (cookie[0].trim().equals("session")) {
-                        try {
-                            UUID tempuuid = UUID.fromString(cookie[1]);
-                            if (session.containsKey(tempuuid)) {
-                                sessionuuid = tempuuid;
+            int contentLength = -1;
+            String page = "";
+            String hostName = "";
+            UUID sessionuuid = null;
+            String headers = "";
+            while (true) {
+                final String line = reader.readLine();
+                if (line == null) {
+                    return;
+                }
+                headers += line + "\r\n";
+                final String contentLengthStr = "Content-Length: ";
+                final String hostStr = "Host: ";
+                final String cookieStr = "Cookie: ";
+                if (line.startsWith(contentLengthStr)) {
+                    contentLength = Integer.parseInt(line.substring(contentLengthStr.length()));
+                    continue;
+                }
+                if (line.startsWith(hostStr)) {
+                    hostName = line.substring(hostStr.length());
+                    continue;
+                }
+
+                if (line.startsWith(cookieStr)) {
+                    String temp = line.substring(cookieStr.length());
+                    String[] cookies = temp.split(";");
+                    for (String e : cookies) {
+                        String[] cookie = e.split("=", 2);
+                        if (cookie[0].trim().equals("session")) {
+                            try {
+                                UUID tempuuid = UUID.fromString(cookie[1]);
+                                if (session.containsKey(tempuuid)) {
+                                    sessionuuid = tempuuid;
+                                }
+                            } catch (IllegalArgumentException ignored) {
                             }
-                        } catch (IllegalArgumentException ignored) {
                         }
                     }
                 }
+
+                if (line.startsWith("GET") || line.startsWith("POST")) {
+                    page = line.split(" ")[1];
+                    continue;
+                }
+
+                if (line.length() == 0) {
+                    break;
+                }
+            }
+            String contentString = null;
+            if (contentLength != -1 && contentLength >= 0) {
+                final char[] content = new char[contentLength];
+                if (reader.read(content) == -1) {
+                    return;
+                }
+                contentString = new String(content);
             }
 
-            if (line.startsWith("GET") || line.startsWith("POST")) {
-                page = line.split(" ")[1];
-                continue;
-            }
-
-            if (line.length() == 0) {
-                break;
-            }
+            PageLoadEvent event = new PageLoadEvent(page, contentString, hostName, headers);
+            eventManager.callEvent(event);
+            System.out.println("Request recieved from: " + client.getInetAddress() + ":" + client.getPort() + " - " +
+                    event.getStatusCode() + " " + (System.currentTimeMillis() - lastRequestTime) + "ms " + event.getPage());
+            generateResponse(writer, event.getStatusCode(), event.getFileEncoding(), event.getResponseData(), sessionuuid,
+                    event.getAdditionalHeadersToSend());
+        } catch (Exception e) {
+            e.printStackTrace();
+            generateResponse(writer, 500, "text/html",
+                    Utilities.convertStreamToString(getClass().getResourceAsStream("/web/error/500.html")),
+                    null, new HashMap<>());
         }
-        String contentString = null;
-        if (contentLength != -1 && contentLength >= 0) {
-            final char[] content = new char[contentLength];
-            if (reader.read(content) == -1) {
-                return;
-            }
-            contentString = new String(content);
-        }
-
-        PageLoadEvent event = new PageLoadEvent(page, contentString, hostName);
-        eventManager.callEvent(event);
-        System.out.println("Request recieved from: " + client.getInetAddress() + ":" + client.getPort() + " - " +
-                event.getStatusCode() + " " + (System.currentTimeMillis() - lastRequestTime) + "ms " + event.getPage());
-        generateResponse(writer, event.getStatusCode(), event.getFileEncoding(), event.getResponseData(), sessionuuid,
-                event.getAdditionalHeaders());
     }
 
     private void generateResponse(PrintWriter writer, int status, String contentType, String responseData, UUID sessionuuid,

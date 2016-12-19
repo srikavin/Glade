@@ -1,9 +1,11 @@
 package me.infuzion.web.server.listener;
 
-import com.fathzer.soft.javaluator.DoubleEvaluator;
-import me.infuzion.web.server.EventListener;
+import me.infuzion.web.server.PageLoadListener;
 import me.infuzion.web.server.EventManager;
 import me.infuzion.web.server.event.PageLoadEvent;
+import me.infuzion.web.server.parser.JPLLexer;
+import me.infuzion.web.server.parser.Parser;
+import me.infuzion.web.server.parser.Interpreter;
 import me.infuzion.web.server.util.HttpParameters;
 import me.infuzion.web.server.util.Utilities;
 
@@ -13,7 +15,7 @@ import java.util.Map;
 import java.util.regex.Matcher;
 import java.util.regex.Pattern;
 
-public class TemplateReplacer implements EventListener {
+public class TemplateReplacer implements PageLoadListener {
     private final Pattern getVariable = Pattern.compile("!\\{GET\\s?\\{\\s?(.+?)\\s?}\\s?}");
     private final Pattern postVariable = Pattern.compile("!\\{POST\\s?\\{\\s?(.+?)\\s?}\\s?}");
     private final Pattern includeFunction = Pattern.compile("!\\{INCLUDE\\s?\\{\\s?(.+?)\\s?}\\s?}");
@@ -21,8 +23,6 @@ public class TemplateReplacer implements EventListener {
     private final Pattern echoFunction = Pattern.compile("!\\{ECHO\\s?\\{\\s?(.+?)\\s?}\\s?}");
     private final Pattern stringConstruct = Pattern.compile("\"(.+)\"");
     private final Pattern calcFunction = Pattern.compile("!\\{CALC\\s?\\{\\s?(.+)\\s?\\s?}}");
-
-    private final DoubleEvaluator evaluator = new DoubleEvaluator();
 
     private ThreadLocal<Map<String, String>> variables = ThreadLocal.withInitial(HashMap::new);
 
@@ -33,14 +33,21 @@ public class TemplateReplacer implements EventListener {
     @Override
     public void onPageLoad(PageLoadEvent event) {
         System.out.println(event.getPage());
-        if (event.getPage().endsWith(".jpl")) {
+        if (event.getPage().endsWith(".jpl") && !event.isHandled()) {
             InputStream stream = getClass().getResourceAsStream("/web/" + event.getPage());
+            if(event.getGetParameters().getParameters().containsKey("noredir")){
+                event.setFileEncoding("text/text");
+                event.setResponseData(Utilities.convertStreamToString(stream));
+                event.setStatusCode(200);
+                return;
+            }
             if (stream != null) {
                 String content = Utilities.convertStreamToString(stream);
 
                 content = parseVariables(content, event, 0);
 
                 event.setResponseData(content);
+                event.setHandled(true);
 
             }
         }
@@ -60,11 +67,16 @@ public class TemplateReplacer implements EventListener {
         content = parseEchoFunction(echoMatcher, content);
 
         Matcher calcMatcher = calcFunction.matcher(content);
+        JPLLexer lexer;
+        Parser parser;
         while(calcMatcher.find()){
             System.out.println("Calc: " + calcMatcher.group(1));
             try {
-                Double result = evaluator.evaluate(calcMatcher.group(1));
-                content = content.replaceFirst(calcMatcher.pattern().toString(), result.toString());
+                lexer = new JPLLexer(calcMatcher.group(1));
+                parser = new Parser(lexer);
+                Interpreter interpreter = new Interpreter();
+                String result = interpreter.interpret(parser);
+                content = content.replaceFirst(calcMatcher.pattern().toString(), result);
             } catch (IllegalArgumentException e){
                 event.setStatusCode(500);
             }

@@ -2,7 +2,7 @@ package me.infuzion.web.server.listener;
 
 import com.github.amr.mimetypes.MimeType;
 import com.github.amr.mimetypes.MimeTypes;
-import me.infuzion.web.server.EventListener;
+import me.infuzion.web.server.PageLoadListener;
 import me.infuzion.web.server.EventManager;
 import me.infuzion.web.server.event.PageLoadEvent;
 import me.infuzion.web.server.util.Utilities;
@@ -12,7 +12,7 @@ import java.net.URISyntaxException;
 import java.nio.file.Files;
 import java.nio.file.Paths;
 
-public class StatusListener implements EventListener {
+public class StatusListener implements PageLoadListener {
     private MimeTypes mimeTypesInstance;
 
     public StatusListener(EventManager eventManager) {
@@ -24,7 +24,7 @@ public class StatusListener implements EventListener {
     @Override
     public void onPageLoad(PageLoadEvent event) {
         if (event.getStatusCode() != 200) {
-            if(event.getStatusCode() != 0){
+            if(event.getStatusCode() != 0 && !event.isHandled()){
                 handleStatus(event);
                 return;
             }

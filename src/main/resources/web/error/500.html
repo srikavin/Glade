@@ -3,13 +3,31 @@
 <head>
     <meta charset="UTF-8">
     <title>404 page not found</title>
-    <link rel="stylesheet" href="/error/error.css"/>
+    <style>header {
+        text-align: center;
+        font-size: 107px;
+    }
+
+    body {
+        color: #c13b32;
+        background: #e7e7e7;
+    }
+
+    #content {
+        text-align: center;
+    }
+
+    #error {
+        position: fixed;
+        font-size: 5%;
+        bottom: 2%;
+    }</style>
 </head>
 <body>
 <div id="content">
     <header>500</header>
     <h1>this request could not be handled</h1>
-    <a href="javascript:location = '/'">home</a> |
+    <a href="javascript:location = '/'">home</a> &#124;
     <a href="javascript:location.reload()">retry</a>
     <div id="error">
         There is nothing to see here
