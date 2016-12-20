@@ -20,7 +20,7 @@ public class Utilities {
     }
 
     public static Map<String, List<String>> parseQuery(String query) throws UnsupportedEncodingException {
-        if(query == null){
+        if (query == null) {
             return new HashMap<>();
         }
         final Map<String, List<String>> query_pairs = new LinkedHashMap<>();
@@ -35,14 +35,5 @@ public class Utilities {
             query_pairs.get(key).add(value);
         }
         return query_pairs;
-    }
-
-    public static String byteArrayToHexString(byte[] b) {
-        String result = "";
-        for (int i=0; i < b.length; i++) {
-            result +=
-                    Integer.toString( ( b[i] & 0xff ) + 0x100, 16).substring( 1 );
-        }
-        return result;
     }
 }

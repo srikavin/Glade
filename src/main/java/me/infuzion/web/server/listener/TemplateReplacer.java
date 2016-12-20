@@ -1,11 +1,11 @@
 package me.infuzion.web.server.listener;
 
-import me.infuzion.web.server.PageLoadListener;
 import me.infuzion.web.server.EventManager;
+import me.infuzion.web.server.PageLoadListener;
 import me.infuzion.web.server.event.PageLoadEvent;
+import me.infuzion.web.server.parser.Interpreter;
 import me.infuzion.web.server.parser.JPLLexer;
 import me.infuzion.web.server.parser.Parser;
-import me.infuzion.web.server.parser.Interpreter;
 import me.infuzion.web.server.util.HttpParameters;
 import me.infuzion.web.server.util.Utilities;
 
@@ -22,7 +22,7 @@ public class TemplateReplacer implements PageLoadListener {
     private final Pattern letConstruct = Pattern.compile("!\\{\\s?LET\\s(.+?)\\s?=\\s?(.+?)\\s?\\s?}");
     private final Pattern echoFunction = Pattern.compile("!\\{ECHO\\s?\\{\\s?(.+?)\\s?}\\s?}");
     private final Pattern stringConstruct = Pattern.compile("\"(.+)\"");
-    private final Pattern calcFunction = Pattern.compile("!\\{CALC\\s?\\{\\s?(.+)\\s?\\s?}}");
+    private final Pattern calcFunction = Pattern.compile("<!jpl(.+)? !>");
 
     private ThreadLocal<Map<String, String>> variables = ThreadLocal.withInitial(HashMap::new);
 
@@ -75,7 +75,8 @@ public class TemplateReplacer implements PageLoadListener {
                 lexer = new JPLLexer(calcMatcher.group(1));
                 parser = new Parser(lexer);
                 Interpreter interpreter = new Interpreter();
-                String result = interpreter.interpret(parser);
+                interpreter.interpret(parser);
+                String result = interpreter.getOutput();
                 content = content.replaceFirst(calcMatcher.pattern().toString(), result);
             } catch (IllegalArgumentException e){
                 event.setStatusCode(500);

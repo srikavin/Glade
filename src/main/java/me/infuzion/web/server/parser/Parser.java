@@ -1,5 +1,6 @@
 package me.infuzion.web.server.parser;
 
+import me.infuzion.web.server.parser.data.jpl.JPLBoolean;
 import me.infuzion.web.server.parser.data.node.*;
 import me.infuzion.web.server.parser.data.node.Number;
 import me.infuzion.web.server.parser.exception.ParseException;
@@ -24,20 +25,20 @@ public class Parser {
         JPLLexer lexer = new JPLLexer("3+43-43+2");
         Parser parser = new Parser(lexer);
         Interpreter interpreter = new Interpreter();
-        System.out.println(interpreter.interpret(parser));
+        System.out.println(interpreter.interpret(parser).asString());
 
         parser = new Parser(new JPLLexer("3  -  5 +  2"));
-        System.out.println(interpreter.interpret(parser));
+        System.out.println(interpreter.interpret(parser).asString());
 
         parser = new Parser(new JPLLexer("3  *  5 +  2"));
-        System.out.println(interpreter.interpret(parser));
+        System.out.println(interpreter.interpret(parser).asString());
 
         Scanner scanner = new Scanner(System.in);
         while (scanner.hasNext()) {
             try {
                 lexer = new JPLLexer(scanner.nextLine());
                 parser = new Parser(lexer);
-                System.out.println(interpreter.interpret(parser));
+                System.out.println(interpreter.interpret(parser).asString());
             } catch (Exception e) {
                 e.printStackTrace();
             }
@@ -54,8 +55,8 @@ public class Parser {
 
     private Node factor() {
         Token token = currentToken;
-        if (token.getType() == TokenType.TYPE_INTEGER) {
-            eat(TokenType.TYPE_INTEGER);
+        if (token.getType() == TokenType.TYPE_NUMBER) {
+            eat(TokenType.TYPE_NUMBER);
             return new Number(Double.valueOf(token.getValue()), token);
         } else if (token.getType() == TokenType.PARENTHESIS_LEFT) {
             eat(TokenType.PARENTHESIS_LEFT);
@@ -68,6 +69,9 @@ public class Parser {
         } else if (token.getType() == TokenType.OP_MINUS) {
             eat(TokenType.OP_MINUS);
             return new UnaryOperator(token, factor());
+        } else if (token.getType() == TokenType.OP_NOT) {
+            eat(TokenType.OP_NOT);
+            return new UnaryOperator(token, factor());
         } else if (currentToken.getType() == TokenType.KEYWORD_VAR) {
             eat(TokenType.KEYWORD_VAR);
             if (currentToken.getType() == TokenType.VAR_NAME) {
@@ -76,12 +80,12 @@ public class Parser {
                 if (currentToken.getType() == TokenType.SEMI) {
                     token = currentToken;
                     eat(TokenType.SEMI);
-                    return new Variable<>(token, name, null, factor());
+                    return new Variable(token, name, null, factor());
                 } else if (currentToken.getType() == TokenType.ASSIGN) {
                     token = currentToken;
                     eat(TokenType.ASSIGN);
-                    if (currentToken.getType() == TokenType.TYPE_INTEGER || currentToken.getType() == TokenType.VAR_NAME) {
-                        return new BinaryOperator(new NoOperator(name, true), token, calc());
+                    if (currentToken.getType() == TokenType.TYPE_NUMBER || currentToken.getType() == TokenType.VAR_NAME) {
+                        return new BinaryOperator(new VariableOperator(name, true), token, calc());
                     }
                 }
             }
@@ -92,11 +96,21 @@ public class Parser {
             if (currentToken.getType() == TokenType.ASSIGN) {
                 token = currentToken;
                 eat(TokenType.ASSIGN);
-                if (currentToken.getType() == TokenType.TYPE_INTEGER || currentToken.getType() == TokenType.VAR_NAME) {
-                    return new BinaryOperator(new NoOperator(name, true), token, calc());
+                if (currentToken.getType() == TokenType.TYPE_NUMBER || currentToken.getType() == TokenType.VAR_NAME) {
+                    return new BinaryOperator(new VariableOperator(name, true), token, calc());
                 }
             }
-            return new NoOperator(name, false);
+            return new VariableOperator(name, false);
+        } else if (currentToken.getType() == TokenType.KEYWORD_ECHO) {
+            eat(TokenType.KEYWORD_ECHO);
+            return new UnaryOperator(token, calc());
+        }
+        if (token.getType() == TokenType.KEYWORD_TRUE) {
+            eat(TokenType.KEYWORD_TRUE);
+            return new NoOperator(new JPLBoolean(true), NoOpType.Boolean, token);
+        } else if (token.getType() == TokenType.KEYWORD_FALSE) {
+            eat(TokenType.KEYWORD_FALSE);
+            return new NoOperator(new JPLBoolean(false), NoOpType.Boolean, token);
         }
         if (currentToken.getType() == TokenType.EOF) {
             return new Node();
@@ -106,21 +120,25 @@ public class Parser {
 
     private Node term() {
         Node node = factor();
-        while ((currentToken.getType() == TokenType.OP_MULTIPLY) || currentToken.getType() == TokenType.OP_DIVIDE
-                || currentToken.getType() == TokenType.EXPONENT) {
+        while (isBOperator(currentToken.getType())) {
             Token token = currentToken;
-            if (token.getType() == TokenType.OP_MULTIPLY) {
-                eat(TokenType.OP_MULTIPLY);
-            } else if (token.getType() == TokenType.OP_DIVIDE) {
-                eat(TokenType.OP_DIVIDE);
-            } else if (token.getType() == TokenType.EXPONENT){
-                eat(TokenType.EXPONENT);
-            }
-
+            TokenType type = token.getType();
+            eat(type);
             node = new BinaryOperator(node, token, factor());
         }
 
         return node;
+    }
+
+    private boolean isBOperator(TokenType type) {
+        TokenType[] types = {TokenType.OP_MULTIPLY, TokenType.OP_DIVIDE, TokenType.OP_LT, TokenType.OP_LTE,
+                TokenType.OP_GT, TokenType.OP_GTE, TokenType.OP_NOT_EQUAL};
+        for (TokenType e : types) {
+            if (e == type) {
+                return true;
+            }
+        }
+        return false;
     }
 
     public Node calc() throws ParseException {

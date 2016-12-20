@@ -11,12 +11,13 @@
 <body>
 <div id="content">
     <header>welcome !{POST{name}}</header>
-    <h1>!{POST{text}} = !{CALC {!{POST{text}}}}</h1>
+    <h1>!{POST{text}} = <!jpl echo !{POST{text}} !></h1>
     <a href="javascript:location = '/?noredir'">jpl source</a> |
     <a href="javascript:history.back()">back</a>
     <div id="error">
         A web server written completely in Java.
     </div>
+    <!jpl echo 1 + 1 !>
     <form method="post" action="index.jpl">
         <input name="name" placeholder="Name"><br>
         <input name="text" placeholder="Math Problem ex: (2+2) * 3"><br>
