@@ -14,15 +14,14 @@
  *    limitations under the License.
  */
 
-package me.infuzion.web.server.parser.exception;
+package me.infuzion.web.server.parser.data.node;
 
-public class ParseException extends RuntimeException {
-    public ParseException(int row, int column){
-        super("Error at row " + row + " column " + column);
-    }
+public class IfNode extends Node {
+    public final Compound nodes;
+    public final Node conditional;
 
-    public ParseException(int row, int column, String message) {
-        super("Error at row " + row + " column " + column + ". " + message);
-
+    public IfNode(Compound nodes, Node conditional) {
+        this.nodes = nodes;
+        this.conditional = conditional;
     }
 }

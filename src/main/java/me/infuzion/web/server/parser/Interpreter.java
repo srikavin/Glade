@@ -17,9 +17,7 @@
 package me.infuzion.web.server.parser;
 
 import me.infuzion.web.server.parser.data.NodeVisitor;
-import me.infuzion.web.server.parser.data.jpl.JPLBoolean;
-import me.infuzion.web.server.parser.data.jpl.JPLDataType;
-import me.infuzion.web.server.parser.data.jpl.JPLNumber;
+import me.infuzion.web.server.parser.data.jpl.*;
 import me.infuzion.web.server.parser.data.node.*;
 import me.infuzion.web.server.parser.data.node.Number;
 
@@ -29,6 +27,13 @@ import java.util.Map;
 public class Interpreter implements NodeVisitor {
     private String output = "";
     private Map<String, Variable> variables = new HashMap<>();
+
+    public Interpreter() {
+    }
+
+    public Interpreter(Map<String, Variable> variables) {
+        this.variables = variables;
+    }
 
     private JPLNumber numberOperation(BinaryOperator node) {
         JPLDataType visitLeft = visit(node.left);
@@ -66,23 +71,27 @@ public class Interpreter implements NodeVisitor {
             throw new RuntimeException("Not assigning to a variable!");
         }
         String name = noOp.name;
-        Double d = visit(notNoOp).asNumber().getValue();
-        Variable v = new Variable(node.token, name, new JPLNumber(d), new Node());
+        JPLDataType toRet = visit(notNoOp);
+        Variable v = new Variable(node.token, name, toRet, new Node());
+
+
         variables.put(name, v);
-        return new JPLNumber(d);
+        return toRet;
     }
 
     @SuppressWarnings("Duplicates")
     @Override
     public JPLDataType visitBinOp(BinaryOperator node) {
-        System.out.println("LEFT: " + node.left.getClass().getSimpleName());
-        System.out.println("Right: " + node.right.getClass().getSimpleName());
+//        System.out.println("LEFT: " + node.left.getClass().getSimpleName());
+//        System.out.println("Right: " + node.right.getClass().getSimpleName());
         if (node.token.getType() == TokenType.ASSIGN) {
             return assignVariable(node);
         } else if (node.token.hasBooleanOperator()) {
-            return binaryOperation(node);
+            return booleanOperation(node);
         } else if (node.token.hasNumericOperator()) {
             return numberOperation(node);
+        } else if (node.token.getType() == TokenType.STRING_CONCATENATE) {
+            return new JPLString(visit(node.left).asString().toString() + visit(node.right).asString().toString());
         } else {
             throw new RuntimeException("Unknown Operator: " + node.token.getType());
         }
@@ -99,11 +108,45 @@ public class Interpreter implements NodeVisitor {
             return new JPLNumber(0);
         } else {
             Variable a = getVariable(node.name);
+            if (a != null && a.value instanceof JPLArray) {
+                return a.value.asString();
+            }
             if (a != null) {
                 return a.value;
             }
         }
         throw new RuntimeException("Variable not initialized!");
+    }
+
+    @Override
+    public JPLDataType visitArrayOp(ArrayOperator node) {
+        Variable v = getVariable(node.varName);
+        if (v == null || v.value == null) {
+            throw new RuntimeException("Variable not initialized!");
+        }
+        if (!(v.value instanceof JPLArray)) {
+            throw new RuntimeException("Cannot access properties of non arrays!");
+        }
+        if (node.assigning) {
+            JPLArray array = (JPLArray) v.value;
+            array.set(node.key.asString().toString(), visit(node.value));
+            Variable n = new Variable(v.token, node.varName, array, node);
+            variables.put(node.varName, n);
+        } else {
+            return ((JPLArray) variables.get(node.varName).value).get(node.key.asString().toString());
+        }
+        return getVariable(node.varName).value.asString();
+    }
+
+    @Override
+    public JPLDataType visitCompound(Compound node) {
+        if (node.statements.size() == 1) {
+            return visit(node.statements.get(0));
+        }
+        for (Node e : node.statements) {
+            visit(e);
+        }
+        return new JPLNull();
     }
 
     public JPLDataType visitUnOp(UnaryOperator node) {
@@ -125,13 +168,30 @@ public class Interpreter implements NodeVisitor {
 
     @Override
     public JPLDataType visitNoOp(NoOperator node) {
-        if (node.type == NoOpType.Boolean) {
+        if (node.type == NoOpType.BOOLEAN) {
+            return node.value;
+        }
+        if (node.type == NoOpType.STRING) {
+            return node.value;
+        }
+        if (node.type == NoOpType.ARRAY) {
             return node.value;
         }
         throw new RuntimeException("Unknown no operator type:" + node.getClass().getCanonicalName());
     }
 
-    private JPLDataType binaryOperation(BinaryOperator node) {
+    @Override
+    public JPLDataType visitIfNode(IfNode node) {
+        if (visit(node.conditional).asBoolean().getValue()) {
+            Compound compound = node.nodes;
+            for (Node e : compound.statements) {
+                visit(e);
+            }
+        }
+        return new JPLNull();
+    }
+
+    private JPLDataType booleanOperation(BinaryOperator node) {
         switch (node.token.getType()) {
             case OP_NOT_EQUAL:
                 return new JPLBoolean(!visit(node.left).equals(visit(node.right)));
@@ -149,7 +209,6 @@ public class Interpreter implements NodeVisitor {
             case OP_GTE:
                 return new JPLBoolean(
                         visit(node.left).asNumber().getValue() >= visit(node.right).asNumber().getValue());
-
         }
         throw new RuntimeException("Unknown Operator: " + node.token.getType());
     }

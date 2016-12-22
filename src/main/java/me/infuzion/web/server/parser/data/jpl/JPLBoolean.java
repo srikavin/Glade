@@ -17,7 +17,7 @@
 package me.infuzion.web.server.parser.data.jpl;
 
 public class JPLBoolean implements JPLDataType {
-    private boolean value;
+    private final boolean value;
 
     public JPLBoolean(boolean value) {
         this.value = value;
@@ -25,10 +25,6 @@ public class JPLBoolean implements JPLDataType {
 
     public Boolean getValue() {
         return value;
-    }
-
-    public void setValue(boolean value) {
-        this.value = value;
     }
 
     @Override
@@ -49,7 +45,7 @@ public class JPLBoolean implements JPLDataType {
     @Override
     public boolean equals(Object o) {
         if (o instanceof JPLBoolean) {
-            if (((JPLBoolean) o).value == value) {
+            if (((JPLBoolean) o).getValue() == value) {
                 return true;
             }
         }

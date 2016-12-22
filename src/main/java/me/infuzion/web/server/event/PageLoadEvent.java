@@ -53,7 +53,7 @@ public class PageLoadEvent extends Event {
             String[] headerArr = headers.split("\r\n");
             for (String e : headerArr) {
                 String[] keyValue = e.split(":", 2);
-                if(keyValue.length == 2) {
+                if (keyValue.length == 2) {
                     temp.put(keyValue[0].trim(), keyValue[1].trim());
                 }
             }

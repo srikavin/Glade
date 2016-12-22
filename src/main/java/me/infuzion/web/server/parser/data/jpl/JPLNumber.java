@@ -16,7 +16,14 @@
 
 package me.infuzion.web.server.parser.data.jpl;
 
+import java.text.DecimalFormat;
+import java.text.DecimalFormatSymbols;
+import java.util.Locale;
+
 public class JPLNumber implements JPLDataType {
+    private static final DecimalFormat df = new DecimalFormat("0", DecimalFormatSymbols.getInstance(Locale.ENGLISH));
+
+
     private double value;
 
     public JPLNumber(double v) {
@@ -33,7 +40,7 @@ public class JPLNumber implements JPLDataType {
 
     @Override
     public JPLBoolean asBoolean() {
-        return value % 2 == 0 ? new JPLBoolean(false) : new JPLBoolean(true);
+        return value == 1 ? new JPLBoolean(true) : new JPLBoolean(false);
     }
 
     @Override
@@ -43,7 +50,8 @@ public class JPLNumber implements JPLDataType {
 
     @Override
     public JPLString asString() {
-        return new JPLString(String.valueOf(value));
+        df.setMaximumFractionDigits(340);
+        return new JPLString(df.format(value));
     }
 
     @Override

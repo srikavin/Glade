@@ -22,11 +22,16 @@ import me.infuzion.web.server.event.PageLoadEvent;
 import me.infuzion.web.server.parser.Interpreter;
 import me.infuzion.web.server.parser.JPLLexer;
 import me.infuzion.web.server.parser.Parser;
+import me.infuzion.web.server.parser.data.jpl.JPLArray;
+import me.infuzion.web.server.parser.data.jpl.JPLString;
+import me.infuzion.web.server.parser.data.node.Node;
+import me.infuzion.web.server.parser.data.node.Variable;
 import me.infuzion.web.server.util.HttpParameters;
 import me.infuzion.web.server.util.Utilities;
 
 import java.io.InputStream;
 import java.util.HashMap;
+import java.util.List;
 import java.util.Map;
 import java.util.regex.Matcher;
 import java.util.regex.Pattern;
@@ -35,12 +40,7 @@ public class TemplateReplacer implements PageLoadListener {
     private final Pattern getVariable = Pattern.compile("!\\{GET\\s?\\{\\s?(.+?)\\s?}\\s?}");
     private final Pattern postVariable = Pattern.compile("!\\{POST\\s?\\{\\s?(.+?)\\s?}\\s?}");
     private final Pattern includeFunction = Pattern.compile("!\\{INCLUDE\\s?\\{\\s?(.+?)\\s?}\\s?}");
-    private final Pattern letConstruct = Pattern.compile("!\\{\\s?LET\\s(.+?)\\s?=\\s?(.+?)\\s?\\s?}");
-    private final Pattern echoFunction = Pattern.compile("!\\{ECHO\\s?\\{\\s?(.+?)\\s?}\\s?}");
-    private final Pattern stringConstruct = Pattern.compile("\"(.+)\"");
-    private final Pattern calcFunction = Pattern.compile("<!jpl(.+)? !>");
-
-    private ThreadLocal<Map<String, String>> variables = ThreadLocal.withInitial(HashMap::new);
+    private final Pattern calcFunction = Pattern.compile("<!jpl\\s(.+?)\\s?!>", Pattern.DOTALL);
 
     public TemplateReplacer(EventManager eventManager) {
         eventManager.registerListener(this);
@@ -51,7 +51,7 @@ public class TemplateReplacer implements PageLoadListener {
         System.out.println(event.getPage());
         if (event.getPage().endsWith(".jpl") && !event.isHandled()) {
             InputStream stream = getClass().getResourceAsStream("/web/" + event.getPage());
-            if(event.getGetParameters().getParameters().containsKey("noredir")){
+            if (event.getGetParameters().getParameters().containsKey("noredir")) {
                 event.setFileEncoding("text/text");
                 event.setResponseData(Utilities.convertStreamToString(stream));
                 event.setStatusCode(200);
@@ -70,31 +70,33 @@ public class TemplateReplacer implements PageLoadListener {
     }
 
     private String parseVariables(String content, PageLoadEvent event, int a) {
-        Matcher getMatcher = getVariable.matcher(content);
-        content = parseHTTPRequest(getMatcher, content, event.getGetParameters());
-
-        Matcher postMatcher = postVariable.matcher(content);
-        content = parseHTTPRequest(postMatcher, content, event.getPostParameters());
-
-        Matcher letMatcher = letConstruct.matcher(content);
-        content = parseLetConstruct(letMatcher, content);
-
-        Matcher echoMatcher = echoFunction.matcher(content);
-        content = parseEchoFunction(echoMatcher, content);
+        Map<String, Variable> variableMap = new HashMap<>();
+        JPLArray array = new JPLArray();
+        for (Map.Entry<String, List<String>> e : event.getGetParameters().getParameters().entrySet()) {
+            array.set(e.getKey(), new JPLString(e.getValue().get(0)));
+        }
+        Variable get = new Variable(null, "GET", array, new Node());
+        array = new JPLArray();
+        for (Map.Entry<String, List<String>> e : event.getPostParameters().getParameters().entrySet()) {
+            array.set(e.getKey(), new JPLString(e.getValue().get(0)));
+        }
+        Variable post = new Variable(null, "POST", array, new Node());
+        variableMap.put("GET", get);
+        variableMap.put("POST", post);
 
         Matcher calcMatcher = calcFunction.matcher(content);
         JPLLexer lexer;
         Parser parser;
-        while(calcMatcher.find()){
+        Interpreter interpreter = new Interpreter(variableMap);
+        while (calcMatcher.find()) {
             System.out.println("Calc: " + calcMatcher.group(1));
             try {
                 lexer = new JPLLexer(calcMatcher.group(1));
                 parser = new Parser(lexer);
-                Interpreter interpreter = new Interpreter();
                 interpreter.interpret(parser);
                 String result = interpreter.getOutput();
                 content = content.replaceFirst(calcMatcher.pattern().toString(), result);
-            } catch (IllegalArgumentException e){
+            } catch (IllegalArgumentException e) {
                 event.setStatusCode(500);
             }
         }
@@ -110,31 +112,8 @@ public class TemplateReplacer implements PageLoadListener {
         Matcher includeMatcher = includeFunction.matcher(content);
         content = parseIncludes(includeMatcher, content, event);
 
-        if(a == 0){
-            parseVariables(content, event, a+1);
-        }
-        return content;
-    }
-
-    private String parseEchoFunction(Matcher matcher, String content){
-        while (matcher.find()) {
-            String varname = matcher.group(1);
-            String toReplace = "";
-            if(variables.get().containsKey(varname)){
-                toReplace = variables.get().get(varname);
-            }
-            content = content.replaceFirst(matcher.pattern().toString(), toReplace);
-        }
-        return content;
-    }
-
-    private String parseLetConstruct(Matcher matcher, String content) {
-        //parse variables
-        while (matcher.find()) {
-            String name = matcher.group(1);
-            String value = matcher.group(2);
-            content = content.replaceFirst(letConstruct.pattern(), "");
-            variables.get().put(name, value);
+        if (a == 0) {
+            parseVariables(content, event, a + 1);
         }
         return content;
     }
@@ -155,7 +134,6 @@ public class TemplateReplacer implements PageLoadListener {
                 return "";
             }
             if (stream == null) {
-                System.out.println("3");
                 event.setStatusCode(500);
                 return "";
             } else {

@@ -18,6 +18,7 @@ package me.infuzion.web.server.parser.data;
 
 import me.infuzion.web.server.parser.Parser;
 import me.infuzion.web.server.parser.data.jpl.JPLDataType;
+import me.infuzion.web.server.parser.data.jpl.JPLNull;
 import me.infuzion.web.server.parser.data.node.*;
 import me.infuzion.web.server.parser.data.node.Number;
 
@@ -29,7 +30,9 @@ public interface NodeVisitor {
     JPLDataType visitVarOp(VariableOperator node);
 
     default JPLDataType visit(Node node) {
-        if (node instanceof BinaryOperator) {
+        if (node instanceof Compound) {
+            return visitCompound((Compound) node);
+        } else if (node instanceof BinaryOperator) {
             return visitBinOp((BinaryOperator) node);
         } else if (node instanceof Number) {
             return visitNum((Number) node);
@@ -39,16 +42,27 @@ public interface NodeVisitor {
             return visitVarOp((VariableOperator) node);
         } else if (node instanceof NoOperator) {
             return visitNoOp((NoOperator) node);
+        } else if (node instanceof IfNode) {
+            return visitIfNode((IfNode) node);
+        } else if (node instanceof ArrayOperator) {
+            return visitArrayOp((ArrayOperator) node);
+        } else if (node.getClass() == Node.class) {
+            return new JPLNull();
         }
-        throw new RuntimeException("No vistor found!");
+        throw new RuntimeException("No vistor found for " + node.getClass().getSimpleName());
     }
 
+    JPLDataType visitArrayOp(ArrayOperator node);
+
+    JPLDataType visitCompound(Compound node);
+
     default JPLDataType interpret(Parser parser) {
-        return visit(parser.calc());
+        return visit(parser.parse());
     }
 
     JPLDataType visitUnOp(UnaryOperator node);
 
     JPLDataType visitNoOp(NoOperator node);
 
+    JPLDataType visitIfNode(IfNode node);
 }

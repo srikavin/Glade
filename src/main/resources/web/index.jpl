@@ -17,17 +17,23 @@
 
 <html lang="en">
 <head>
-    !{LET code=5}
+    <!jpl var code=5 !>
     <meta charset="UTF-8">
-    <title>!{ECHO {code}} !{GET{error}} !{CALC {(1+2)/2+3*(52*2000021)-10}}</title>
+    <title><!jpl
+        if(GET[error] != GET[a]){ # Get[a] should be null
+            if(GET[error] > -1){
+                echo "IT WORKS"
+           }
+        } !>
+    </title>
     <style>
         !{INCLUDE {/error/error.css}}
     </style>
 </head>
 <body>
 <div id="content">
-    <header>welcome !{POST{name}}</header>
-    <h1>!{POST{text}} = <!jpl echo !{POST{text}} !></h1>
+    <header>welcome <!jpl echo POST[name] !></header>
+    <h1><!jpl echo POST[text] . " = " . POST[text] !></h1>
     <a href="javascript:location = '/?noredir'">jpl source</a> |
     <a href="javascript:history.back()">back</a>
     <div id="error">

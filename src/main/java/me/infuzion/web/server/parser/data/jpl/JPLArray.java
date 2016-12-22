@@ -22,20 +22,8 @@ import java.util.Map;
 public class JPLArray implements JPLDataType {
     private Map<String, JPLDataType> value = new HashMap<>();
 
-    public JPLArray(Map<String, JPLDataType> value) {
-        this.value = value;
-    }
-
-    public Map<String, JPLDataType> getValue() {
-        return value;
-    }
-
-    public void setValue(Map<String, JPLDataType> value) {
-        this.value = value;
-    }
-
     public JPLDataType get(String key) {
-        return value.get(key);
+        return value.getOrDefault(key, new JPLNull());
     }
 
     public void set(String key, JPLDataType value) {
@@ -54,11 +42,11 @@ public class JPLArray implements JPLDataType {
 
     @Override
     public JPLString asString() {
-        String toRet = "";
+        String toRet = "Array {  ";
         for (Map.Entry<String, JPLDataType> e : value.entrySet()) {
-            toRet += "\"" + e.getKey() + "\" => \"" + e.getValue() + "\", ";
+            toRet = toRet.trim() + "\"" + e.getKey() + "\" => \"" + e.getValue().asString() + "\", ";
         }
-        return new JPLString("{" + toRet.substring(0, toRet.length() - 1) + "}");
+        return new JPLString(toRet.substring(0, toRet.length() - 2) + "}");
     }
 
     @Override

@@ -17,10 +17,12 @@
 package me.infuzion.web.server.parser;
 
 public enum TokenType {
+    // Line Comment:          # ...
+    // Block Comment:         /* ... */
     KEYWORD_IF,            // if
-    KEYWORD_BEGIN,
-    KEYWORD_END,
+    STRING_LITERAL,        // "
     KEYWORD_ELSE,          // else
+    KEYWORD_ELSE_IF,       // elif
     KEYWORD_VAR,           // var
     KEYWORD_ECHO,          // echo
     VAR_NAME,              // any alphabetic word (other than other keywords)
@@ -28,9 +30,11 @@ public enum TokenType {
     SEMI,                  // ;
     KEYWORD_TRUE,          // true
     KEYWORD_FALSE,         // false
-    BRACKET_LEFT,          // {
-    BRACKET_RIGHT,         // }
-    TYPE_NUMBER,
+    CURLY_BRACKET_LEFT,    // {
+    CURLY_BRACKET_RIGHT,   // }
+    SQUARE_BRACKET_LEFT,   // [
+    SQUARE_BRACKET_RIGHT,  // ]
+    TYPE_NUMBER,           // any numerical digit(s)
     STRING_CONCATENATE,    // .
     OP_PLUS,               // +
     OP_MINUS,              // -
@@ -46,8 +50,8 @@ public enum TokenType {
     OP_EXPONENT,           // ^
     PARENTHESIS_LEFT,      // (
     PARENTHESIS_RIGHT,     // )
+    ARRAY_INITIALIZER,     // {} var a = {}
+    ARRAY_KEY,             // [] a[1]
     EOF,
 }
 
-// Line Comment:          #
-// Block Comment:         /* ... */

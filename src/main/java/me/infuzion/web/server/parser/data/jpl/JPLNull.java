@@ -14,15 +14,26 @@
  *    limitations under the License.
  */
 
-package me.infuzion.web.server.parser.exception;
+package me.infuzion.web.server.parser.data.jpl;
 
-public class ParseException extends RuntimeException {
-    public ParseException(int row, int column){
-        super("Error at row " + row + " column " + column);
+public class JPLNull implements JPLDataType {
+    @Override
+    public JPLBoolean asBoolean() {
+        return new JPLBoolean(false);
     }
 
-    public ParseException(int row, int column, String message) {
-        super("Error at row " + row + " column " + column + ". " + message);
+    @Override
+    public JPLNumber asNumber() {
+        return new JPLNumber(0);
+    }
 
+    @Override
+    public JPLString asString() {
+        return new JPLString("null");
+    }
+
+    @Override
+    public boolean equals(Object o) {
+        return o instanceof JPLNull;
     }
 }

@@ -16,13 +16,23 @@
 
 package me.infuzion.web.server.parser.data.node;
 
-import java.util.List;
+import me.infuzion.web.server.parser.data.jpl.JPLDataType;
+import me.infuzion.web.server.parser.data.jpl.JPLNull;
 
-public class Compound extends Node {
-    public final List<Node> statements;
+public class ArrayOperator extends Node {
+    public final boolean assigning;
+    public final JPLDataType key;
+    public final String varName;
+    public Node value;
 
-    public Compound(List<Node> statements) {
-        this.statements = statements;
-        int a = 2;
+    public ArrayOperator(boolean assigning, JPLDataType key, String varName, Node value) {
+        this.assigning = assigning;
+        this.key = key == null ? new JPLNull() : key;
+        this.varName = varName;
+        this.value = value == null ? new Node() : value;
+    }
+
+    public ArrayOperator(boolean assigning, JPLDataType key, String varName) {
+        this(assigning, key, varName, null);
     }
 }
