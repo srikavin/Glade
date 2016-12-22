@@ -14,16 +14,26 @@
  *    limitations under the License.
  */
 
-package me.infuzion.web.server.parser.data.node;
+package me.infuzion.web.server.jpl.data.jpl;
 
-import me.infuzion.web.server.parser.Token;
+public class JPLNull implements JPLDataType {
+    @Override
+    public JPLBoolean asBoolean() {
+        return new JPLBoolean(false);
+    }
 
-public class Number extends Node {
-    public final double num;
-    public final Token token;
+    @Override
+    public JPLNumber asNumber() {
+        return new JPLNumber(0);
+    }
 
-    public Number(double num, Token token) {
-        this.num = num;
-        this.token = token;
+    @Override
+    public JPLString asString() {
+        return new JPLString("null");
+    }
+
+    @Override
+    public boolean equals(Object o) {
+        return o instanceof JPLNull;
     }
 }

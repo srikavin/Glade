@@ -14,15 +14,15 @@
  *    limitations under the License.
  */
 
-package me.infuzion.web.server.parser.data.node;
+package me.infuzion.web.server.jpl.exception;
 
-import java.util.List;
+public class ParseException extends RuntimeException {
+    public ParseException(int row, int column){
+        super("Error at row " + row + " column " + column);
+    }
 
-public class Compound extends Node {
-    public final List<Node> statements;
+    public ParseException(int row, int column, String message) {
+        super("Error at row " + row + " column " + column + ". " + message);
 
-    public Compound(List<Node> statements) {
-        this.statements = statements;
-        int a = 2;
     }
 }

@@ -14,7 +14,7 @@
  *    limitations under the License.
  */
 
-package me.infuzion.web.server.parser;
+package me.infuzion.web.server.jpl;
 
 public enum TokenType {
     // Line Comment:          # ...

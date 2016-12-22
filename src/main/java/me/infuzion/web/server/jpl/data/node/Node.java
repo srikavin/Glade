@@ -14,7 +14,7 @@
  *    limitations under the License.
  */
 
-package me.infuzion.web.server.parser.data.node;
+package me.infuzion.web.server.jpl.data.node;
 
 public class Node {
 }

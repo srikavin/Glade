@@ -14,8 +14,14 @@
  *    limitations under the License.
  */
 
-package me.infuzion.web.server.parser.data;
+package me.infuzion.web.server.jpl.data.node;
 
-public enum NodeType {
+public class IfNode extends Node {
+    public final Compound nodes;
+    public final Node conditional;
 
+    public IfNode(Compound nodes, Node conditional) {
+        this.nodes = nodes;
+        this.conditional = conditional;
+    }
 }

@@ -14,19 +14,15 @@
  *    limitations under the License.
  */
 
-package me.infuzion.web.server.parser.data.node;
+package me.infuzion.web.server.jpl.data.node;
 
-import me.infuzion.web.server.parser.Token;
-import me.infuzion.web.server.parser.data.jpl.JPLDataType;
+import java.util.List;
 
-public class NoOperator extends Node {
-    public final JPLDataType value;
-    public final NoOpType type;
-    public final Token token;
+public class Compound extends Node {
+    public final List<Node> statements;
 
-    public NoOperator(JPLDataType value, NoOpType type, Token token) {
-        this.value = value;
-        this.type = type;
-        this.token = token;
+    public Compound(List<Node> statements) {
+        this.statements = statements;
+        int a = 2;
     }
 }

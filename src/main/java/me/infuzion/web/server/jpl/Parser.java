@@ -14,48 +14,34 @@
  *    limitations under the License.
  */
 
-package me.infuzion.web.server.parser;
+package me.infuzion.web.server.jpl;
 
-import me.infuzion.web.server.parser.data.jpl.*;
-import me.infuzion.web.server.parser.data.node.*;
-import me.infuzion.web.server.parser.data.node.Number;
-import me.infuzion.web.server.parser.exception.ParseException;
+import me.infuzion.web.server.jpl.data.jpl.*;
+import me.infuzion.web.server.jpl.data.node.*;
+import me.infuzion.web.server.jpl.data.node.Number;
+import me.infuzion.web.server.jpl.exception.ParseException;
 
 import java.util.ArrayList;
 import java.util.List;
 import java.util.Scanner;
 
-@SuppressWarnings("Duplicates")
 public class Parser {
-    private int row;
-    private int column;
     private Token currentToken;
     private JPLLexer lexer;
 
     public Parser(JPLLexer lexer) {
         this.lexer = lexer;
         currentToken = lexer.getNextToken();
-        row = 1;
-        column = 1;
     }
 
-    public static void main(String[] a) throws ParseException {
-        JPLLexer lexer = new JPLLexer("3+43-43+2");
-        Parser parser = new Parser(lexer);
+    public static void main(String[] a) {
         Interpreter interpreter = new Interpreter();
-        System.out.println(interpreter.interpret(parser).asString());
-
-        parser = new Parser(new JPLLexer("3  -  5 +  2"));
-        System.out.println(interpreter.interpret(parser).asString());
-
-        parser = new Parser(new JPLLexer("3  *  5 +  2"));
-        System.out.println(interpreter.interpret(parser).asString());
 
         Scanner scanner = new Scanner(System.in);
         while (scanner.hasNext()) {
             try {
-                lexer = new JPLLexer(scanner.nextLine());
-                parser = new Parser(lexer);
+                JPLLexer lexer = new JPLLexer(scanner.nextLine());
+                Parser parser = new Parser(lexer);
                 System.out.println(interpreter.interpret(parser).asString());
             } catch (Exception e) {
                 e.printStackTrace();

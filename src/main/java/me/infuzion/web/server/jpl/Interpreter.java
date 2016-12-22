@@ -14,12 +14,12 @@
  *    limitations under the License.
  */
 
-package me.infuzion.web.server.parser;
+package me.infuzion.web.server.jpl;
 
-import me.infuzion.web.server.parser.data.NodeVisitor;
-import me.infuzion.web.server.parser.data.jpl.*;
-import me.infuzion.web.server.parser.data.node.*;
-import me.infuzion.web.server.parser.data.node.Number;
+import me.infuzion.web.server.jpl.data.NodeVisitor;
+import me.infuzion.web.server.jpl.data.jpl.*;
+import me.infuzion.web.server.jpl.data.node.*;
+import me.infuzion.web.server.jpl.data.node.Number;
 
 import java.util.HashMap;
 import java.util.Map;

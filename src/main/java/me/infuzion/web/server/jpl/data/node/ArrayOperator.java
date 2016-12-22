@@ -14,14 +14,25 @@
  *    limitations under the License.
  */
 
-package me.infuzion.web.server.parser.data.node;
+package me.infuzion.web.server.jpl.data.node;
 
-public class VariableOperator extends Node {
-    public final String name;
+import me.infuzion.web.server.jpl.data.jpl.JPLDataType;
+import me.infuzion.web.server.jpl.data.jpl.JPLNull;
+
+public class ArrayOperator extends Node {
     public final boolean assigning;
+    public final JPLDataType key;
+    public final String varName;
+    public Node value;
 
-    public VariableOperator(String name, boolean assigning) {
-        this.name = name;
+    public ArrayOperator(boolean assigning, JPLDataType key, String varName, Node value) {
         this.assigning = assigning;
+        this.key = key == null ? new JPLNull() : key;
+        this.varName = varName;
+        this.value = value == null ? new Node() : value;
+    }
+
+    public ArrayOperator(boolean assigning, JPLDataType key, String varName) {
+        this(assigning, key, varName, null);
     }
 }

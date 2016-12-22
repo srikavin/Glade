@@ -14,13 +14,13 @@
  *    limitations under the License.
  */
 
-package me.infuzion.web.server.parser.data;
+package me.infuzion.web.server.jpl.data;
 
-import me.infuzion.web.server.parser.Parser;
-import me.infuzion.web.server.parser.data.jpl.JPLDataType;
-import me.infuzion.web.server.parser.data.jpl.JPLNull;
-import me.infuzion.web.server.parser.data.node.*;
-import me.infuzion.web.server.parser.data.node.Number;
+import me.infuzion.web.server.jpl.Parser;
+import me.infuzion.web.server.jpl.data.jpl.JPLDataType;
+import me.infuzion.web.server.jpl.data.jpl.JPLNull;
+import me.infuzion.web.server.jpl.data.node.*;
+import me.infuzion.web.server.jpl.data.node.Number;
 
 public interface NodeVisitor {
     JPLDataType visitBinOp(BinaryOperator node);

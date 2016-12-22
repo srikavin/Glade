@@ -14,10 +14,14 @@
  *    limitations under the License.
  */
 
-package me.infuzion.web.server.parser.data.node;
+package me.infuzion.web.server.jpl.data.jpl;
 
-public enum NoOpType {
-    BOOLEAN,
-    STRING,
-    ARRAY
+public interface JPLDataType {
+    JPLBoolean asBoolean();
+
+    JPLNumber asNumber();
+
+    JPLString asString();
+
+    boolean equals(Object o);
 }

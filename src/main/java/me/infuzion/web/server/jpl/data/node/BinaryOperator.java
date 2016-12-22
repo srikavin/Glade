@@ -14,31 +14,20 @@
  *    limitations under the License.
  */
 
-package me.infuzion.web.server.parser.data.node;
+package me.infuzion.web.server.jpl.data.node;
 
-import me.infuzion.web.server.parser.Token;
-import me.infuzion.web.server.parser.data.jpl.JPLDataType;
+import me.infuzion.web.server.jpl.Token;
 
-public class Variable extends Node {
+public class BinaryOperator extends Node {
+
+    public final Node left;
+    public final Node right;
     public final Token token;
-    public final String name;
-    public final JPLDataType value;
-    public final Node node;
 
-    public Variable(Token token, String name, JPLDataType value, Node node) {
+
+    public BinaryOperator(Node left, Token token, Node right){
+        this.left = left;
+        this.right = right;
         this.token = token;
-        this.name = name;
-        this.value = value;
-        this.node = node;
-    }
-
-    @Override
-    public boolean equals(Object o) {
-        if (o instanceof Variable) {
-            if (((Variable) o).name.equals(name)) {
-                return true;
-            }
-        }
-        return false;
     }
 }

@@ -14,15 +14,10 @@
  *    limitations under the License.
  */
 
-package me.infuzion.web.server.parser.exception;
+package me.infuzion.web.server.jpl.data.node;
 
-public class ParseException extends RuntimeException {
-    public ParseException(int row, int column){
-        super("Error at row " + row + " column " + column);
-    }
-
-    public ParseException(int row, int column, String message) {
-        super("Error at row " + row + " column " + column + ". " + message);
-
-    }
+public enum NoOpType {
+    BOOLEAN,
+    STRING,
+    ARRAY
 }

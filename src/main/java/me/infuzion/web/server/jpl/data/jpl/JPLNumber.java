@@ -14,7 +14,7 @@
  *    limitations under the License.
  */
 
-package me.infuzion.web.server.parser.data.jpl;
+package me.infuzion.web.server.jpl.data.jpl;
 
 import java.text.DecimalFormat;
 import java.text.DecimalFormatSymbols;

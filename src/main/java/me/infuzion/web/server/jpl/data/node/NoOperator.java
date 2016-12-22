@@ -14,16 +14,19 @@
  *    limitations under the License.
  */
 
-package me.infuzion.web.server.parser.data.node;
+package me.infuzion.web.server.jpl.data.node;
 
-import me.infuzion.web.server.parser.Token;
+import me.infuzion.web.server.jpl.Token;
+import me.infuzion.web.server.jpl.data.jpl.JPLDataType;
 
-public class UnaryOperator extends Node {
+public class NoOperator extends Node {
+    public final JPLDataType value;
+    public final NoOpType type;
     public final Token token;
-    public final Node node;
 
-    public UnaryOperator(Token token, Node node){
+    public NoOperator(JPLDataType value, NoOpType type, Token token) {
+        this.value = value;
+        this.type = type;
         this.token = token;
-        this.node = node;
     }
 }

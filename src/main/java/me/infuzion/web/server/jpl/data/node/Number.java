@@ -14,14 +14,16 @@
  *    limitations under the License.
  */
 
-package me.infuzion.web.server.parser.data.jpl;
+package me.infuzion.web.server.jpl.data.node;
 
-public interface JPLDataType {
-    JPLBoolean asBoolean();
+import me.infuzion.web.server.jpl.Token;
 
-    JPLNumber asNumber();
+public class Number extends Node {
+    public final double num;
+    public final Token token;
 
-    JPLString asString();
-
-    boolean equals(Object o);
+    public Number(double num, Token token) {
+        this.num = num;
+        this.token = token;
+    }
 }

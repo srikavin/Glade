@@ -14,18 +14,15 @@
  *    limitations under the License.
  */
 
-package me.infuzion.web.server.listener;
+package me.infuzion.web.server.jpl;
 
 import me.infuzion.web.server.EventManager;
 import me.infuzion.web.server.PageLoadListener;
 import me.infuzion.web.server.event.PageLoadEvent;
-import me.infuzion.web.server.parser.Interpreter;
-import me.infuzion.web.server.parser.JPLLexer;
-import me.infuzion.web.server.parser.Parser;
-import me.infuzion.web.server.parser.data.jpl.JPLArray;
-import me.infuzion.web.server.parser.data.jpl.JPLString;
-import me.infuzion.web.server.parser.data.node.Node;
-import me.infuzion.web.server.parser.data.node.Variable;
+import me.infuzion.web.server.jpl.data.jpl.JPLArray;
+import me.infuzion.web.server.jpl.data.jpl.JPLString;
+import me.infuzion.web.server.jpl.data.node.Node;
+import me.infuzion.web.server.jpl.data.node.Variable;
 import me.infuzion.web.server.util.HttpParameters;
 import me.infuzion.web.server.util.Utilities;
 
@@ -36,13 +33,13 @@ import java.util.Map;
 import java.util.regex.Matcher;
 import java.util.regex.Pattern;
 
-public class TemplateReplacer implements PageLoadListener {
+public class JPLExecutor implements PageLoadListener {
     private final Pattern getVariable = Pattern.compile("!\\{GET\\s?\\{\\s?(.+?)\\s?}\\s?}");
     private final Pattern postVariable = Pattern.compile("!\\{POST\\s?\\{\\s?(.+?)\\s?}\\s?}");
     private final Pattern includeFunction = Pattern.compile("!\\{INCLUDE\\s?\\{\\s?(.+?)\\s?}\\s?}");
     private final Pattern calcFunction = Pattern.compile("<!jpl\\s(.+?)\\s?!>", Pattern.DOTALL);
 
-    public TemplateReplacer(EventManager eventManager) {
+    public JPLExecutor(EventManager eventManager) {
         eventManager.registerListener(this);
     }
 

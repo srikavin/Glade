@@ -14,14 +14,14 @@
  *    limitations under the License.
  */
 
-package me.infuzion.web.server.parser.data.node;
+package me.infuzion.web.server.jpl.data.node;
 
-public class IfNode extends Node {
-    public final Compound nodes;
-    public final Node conditional;
+public class VariableOperator extends Node {
+    public final String name;
+    public final boolean assigning;
 
-    public IfNode(Compound nodes, Node conditional) {
-        this.nodes = nodes;
-        this.conditional = conditional;
+    public VariableOperator(String name, boolean assigning) {
+        this.name = name;
+        this.assigning = assigning;
     }
 }

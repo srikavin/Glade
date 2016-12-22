@@ -14,37 +14,41 @@
  *    limitations under the License.
  */
 
-package me.infuzion.web.server.parser.data.jpl;
+package me.infuzion.web.server.jpl.data.jpl;
 
-public class JPLString implements JPLDataType {
-    private final String value;
+public class JPLBoolean implements JPLDataType {
+    private final boolean value;
 
-    public JPLString(String value) {
+    public JPLBoolean(boolean value) {
         this.value = value;
+    }
+
+    public Boolean getValue() {
+        return value;
     }
 
     @Override
     public JPLBoolean asBoolean() {
-        return new JPLBoolean(Boolean.parseBoolean(value));
-    }
-
-    @Override
-    public JPLNumber asNumber() {
-        return new JPLNumber(Double.parseDouble(value));
-    }
-
-    @Override
-    public JPLString asString() {
         return this;
     }
 
     @Override
-    public boolean equals(Object o) {
-        return o instanceof JPLString && value.equals(((JPLString) o).value);
+    public JPLNumber asNumber() {
+        return value ? new JPLNumber(1) : new JPLNumber(0);
     }
 
     @Override
-    public String toString() {
-        return value;
+    public JPLString asString() {
+        return new JPLString(String.valueOf(value));
+    }
+
+    @Override
+    public boolean equals(Object o) {
+        if (o instanceof JPLBoolean) {
+            if (((JPLBoolean) o).getValue() == value) {
+                return true;
+            }
+        }
+        return false;
     }
 }
