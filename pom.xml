@@ -21,7 +21,7 @@
     <modelVersion>4.0.0</modelVersion>
 
     <groupId>infuzion</groupId>
-    <artifactId>Java Web Server</artifactId>
+    <artifactId>JavaWebServer</artifactId>
     <version>1.0-SNAPSHOT</version>
 
     <properties>
