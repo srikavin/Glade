@@ -16,6 +16,7 @@
 
 package me.infuzion.web.server.jpl;
 
+import me.infuzion.web.server.jpl.data.ConditionalType;
 import me.infuzion.web.server.jpl.data.NodeVisitor;
 import me.infuzion.web.server.jpl.data.jpl.*;
 import me.infuzion.web.server.jpl.data.node.*;
@@ -115,7 +116,12 @@ public class Interpreter implements NodeVisitor {
                 return a.value;
             }
         }
-        throw new RuntimeException("Variable not initialized!");
+        throw new RuntimeException("Variable " + node.name + " not initialized!");
+    }
+
+    @Override
+    public JPLDataType visitLiteral(Literal node) {
+        return new JPLString(Character.toString(node.value));
     }
 
     @Override
@@ -177,15 +183,26 @@ public class Interpreter implements NodeVisitor {
         if (node.type == NoOpType.ARRAY) {
             return node.value;
         }
+        if (node.type == NoOpType.NONE) {
+            return node.value;
+        }
         throw new RuntimeException("Unknown no operator type:" + node.getClass().getCanonicalName());
     }
 
     @Override
-    public JPLDataType visitIfNode(IfNode node) {
-        if (visit(node.conditional).asBoolean().getValue()) {
-            Compound compound = node.nodes;
-            for (Node e : compound.statements) {
-                visit(e);
+    public JPLDataType visitConditional(ConditionalNode node) {
+        if (node.type == ConditionalType.IF) {
+            if (visit(node.conditional).asBoolean().getValue()) {
+                for (Node e : node.nodes.statements) {
+                    visit(e);
+                }
+            }
+
+        } else if (node.type == ConditionalType.WHILE) {
+            while (visit(node.conditional).asBoolean().getValue()) {
+                for (Node e : node.nodes.statements) {
+                    visit(e);
+                }
             }
         }
         return new JPLNull();

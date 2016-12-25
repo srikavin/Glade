@@ -19,11 +19,13 @@ package me.infuzion.web.server.jpl;
 import me.infuzion.web.server.jpl.exception.ParseException;
 
 public class JPLLexer {
+    private static final char[] escapedCharacters = {'n', '"'};
     private final String text;
     private Character currentChar;
     private int index;
     private int row;
     private int column;
+    private boolean inJPLTag = false;
 
     public JPLLexer(String text) {
         this.text = text.replaceAll("\\n", "\n");
@@ -66,8 +68,71 @@ public class JPLLexer {
                 return new Token(TokenType.KEYWORD_TRUE, "true", row, column);
             case "false":
                 return new Token(TokenType.KEYWORD_FALSE, "false", row, column);
+            case "while":
+                return new Token(TokenType.KEYWORD_WHILE, "while", row, column);
+            case "for":
+                return new Token(TokenType.KEYWORD_FOR, "for", row, column);
+            case "else":
+                return new Token(TokenType.KEYWORD_ELSE, "else", row, column);
+            case "elif":
+                return new Token(TokenType.KEYWORD_ELSE_IF, "elif", row, column);
             default:
                 return new Token(TokenType.VAR_NAME, result, row, column);
+        }
+    }
+
+    private char parseEscapedChars() {
+        Character peek = peek();
+        if (peek == null) {
+            throw new ParseException(row, column, "Unexpected end of file!");
+        }
+        for (char e : escapedCharacters) {
+            if (e == peek) {
+                advance();
+                advance();
+                return e;
+            }
+        }
+        throw new ParseException(row, column, "Unknown escape sequence! " + currentChar);
+    }
+
+    private void skipNonJPL() {
+        while (currentChar != null) {
+            if (!inJPLTag && currentChar == '<') {
+                Character excl = peek(1);
+                if (excl == null || excl != '!') {
+                    continue;
+                }
+                Character j = peek(2);
+                if (j == null || j != 'j') {
+                    continue;
+                }
+                Character p = peek(3);
+                if (p == null || p != 'p') {
+                    continue;
+                }
+                Character l = peek(4);
+                if (l == null || l != 'l') {
+                    continue;
+                }
+                advance();
+                advance();
+                advance();
+                advance();
+                advance();
+                skipWhiteSpace();
+                inJPLTag = true;
+                return;
+            }
+            if (inJPLTag && currentChar == '!' && peek() != null && peek() == '>') {
+                advance();
+                advance();
+                inJPLTag = false;
+            }
+            if (inJPLTag) {
+                return;
+            }
+            advance();
         }
     }
 
@@ -75,9 +140,19 @@ public class JPLLexer {
         while (currentChar != null) {
             currentChar = text.charAt(index);
 
+            skipNonJPL();
+
+            if (currentChar == null) {
+                return new Token(TokenType.EOF, "", row, column);
+            }
+
             if (currentChar == '#' || (currentChar == '/' && peek() != null && peek() == '*')) {
                 skipComment();
                 continue;
+            }
+
+            if (currentChar == '\\') {
+                return new Token(TokenType.LITERAL, "\\" + parseEscapedChars(), row, column);
             }
 
             if (currentChar == '\r' && peek() != null && peek() == '\n') {
@@ -96,6 +171,11 @@ public class JPLLexer {
 
             if (Character.isSpaceChar(currentChar)) {
                 skipWhiteSpace();
+                continue;
+            }
+
+            if (currentChar == ';') {
+                advance();
                 continue;
             }
 
@@ -130,9 +210,15 @@ public class JPLLexer {
                 advance();
                 String result = "";
                 while (currentChar != null) {
-                    if (currentChar == '\\' && peek() == null && peek() == '"') {
-                        result += '"';
-                        advance();
+                    if (currentChar == '\\') {
+                        switch (parseEscapedChars()) {
+                            case 'n':
+                                result += '\n';
+                                break;
+                            case '"':
+                                result += '"';
+                                break;
+                        }
                         continue;
                     } else if (currentChar == '"') {
                         advance();
@@ -262,7 +348,11 @@ public class JPLLexer {
     }
 
     private Character peek() {
-        int peek_pos = index + 1;
+        return peek(1);
+    }
+
+    private Character peek(int amount) {
+        int peek_pos = index + amount;
         if (peek_pos > text.length() - 1) {
             return null;
         } else {

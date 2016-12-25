@@ -16,9 +16,10 @@
 
 package me.infuzion.web.server.jpl.data.node;
 
-public enum NoOpType {
-    BOOLEAN,
-    STRING,
-    ARRAY,
-    NONE
+public class Literal extends Node {
+    public final char value;
+
+    public Literal(char value) {
+        this.value = value;
+    }
 }

@@ -14,11 +14,10 @@
  *    limitations under the License.
  */
 
-package me.infuzion.web.server.jpl.data.node;
+package me.infuzion.web.server.jpl.data;
 
-public enum NoOpType {
-    BOOLEAN,
-    STRING,
-    ARRAY,
-    NONE
+public enum ConditionalType {
+    IF,
+    FOR,
+    WHILE
 }

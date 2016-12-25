@@ -16,12 +16,17 @@
 
 package me.infuzion.web.server.jpl.data.node;
 
-public class IfNode extends Node {
+import me.infuzion.web.server.jpl.data.ConditionalType;
+
+public class ConditionalNode extends Node {
     public final Compound nodes;
     public final Node conditional;
 
-    public IfNode(Compound nodes, Node conditional) {
+    public final ConditionalType type;
+
+    public ConditionalNode(Compound nodes, Node conditional, ConditionalType type) {
         this.nodes = nodes;
         this.conditional = conditional;
+        this.type = type;
     }
 }

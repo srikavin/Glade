@@ -23,17 +23,18 @@ public enum TokenType {
     STRING_LITERAL,        // "
     KEYWORD_ELSE,          // else
     KEYWORD_ELSE_IF,       // elif
+    KEYWORD_WHILE,         // while
+    KEYWORD_FOR,           // for
     KEYWORD_VAR,           // var
     KEYWORD_ECHO,          // echo
     VAR_NAME,              // any alphabetic word (other than other keywords)
     ASSIGN,                // =
+    LITERAL,               // escaped values - "\n"
     SEMI,                  // ;
     KEYWORD_TRUE,          // true
     KEYWORD_FALSE,         // false
     CURLY_BRACKET_LEFT,    // {
     CURLY_BRACKET_RIGHT,   // }
-    SQUARE_BRACKET_LEFT,   // [
-    SQUARE_BRACKET_RIGHT,  // ]
     TYPE_NUMBER,           // any numerical digit(s)
     STRING_CONCATENATE,    // .
     OP_PLUS,               // +

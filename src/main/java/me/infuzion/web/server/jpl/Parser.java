@@ -16,12 +16,14 @@
 
 package me.infuzion.web.server.jpl;
 
+import me.infuzion.web.server.jpl.data.ConditionalType;
 import me.infuzion.web.server.jpl.data.jpl.*;
 import me.infuzion.web.server.jpl.data.node.*;
 import me.infuzion.web.server.jpl.data.node.Number;
 import me.infuzion.web.server.jpl.exception.ParseException;
 
 import java.util.ArrayList;
+import java.util.Collections;
 import java.util.List;
 import java.util.Scanner;
 
@@ -40,8 +42,18 @@ public class Parser {
         Scanner scanner = new Scanner(System.in);
         while (scanner.hasNext()) {
             try {
-                JPLLexer lexer = new JPLLexer(scanner.nextLine());
+                String input = scanner.nextLine();
+                JPLLexer lexer = new JPLLexer("<!jpl " + input + " !>");
+//                Token t = lexer.getNextToken();
+//                while(t.getType() != TokenType.EOF){
+//                    System.out.println(t.getType() + " : " + t.getValue());
+//                    t = lexer.getNextToken();
+//                }
+                lexer = new JPLLexer("<!jpl " + input + " !>");
                 Parser parser = new Parser(lexer);
+                Node node = parser.parse();
+                lexer = new JPLLexer("<!jpl " + input + " !>");
+                parser = new Parser(lexer);
                 System.out.println(interpreter.interpret(parser).asString());
             } catch (Exception e) {
                 e.printStackTrace();
@@ -79,6 +91,12 @@ public class Parser {
 
     private Node highPriority() {
         Token token = currentToken;
+
+        if (token.getType() == TokenType.SEMI) {
+            eat(TokenType.SEMI);
+            return new Compound(Collections.singletonList(parse()));
+        }
+
         if (token.getType() == TokenType.TYPE_NUMBER) {
             eat(TokenType.TYPE_NUMBER);
             return new Number(Double.valueOf(token.getValue()), token);
@@ -87,15 +105,29 @@ public class Parser {
             Node node = parse();
             eat(TokenType.PARENTHESIS_RIGHT);
             return node;
+        } else if (token.getType() == TokenType.LITERAL) {
+            Character val = null;
+            switch (token.getValue()) {
+                case "\\n":
+                    val = '\n';
+                    break;
+                case "\\\"":
+                    val = '"';
+                    break;
+            }
+            if (val == null) {
+                throw new ParseException(token.row, token.column, "Unknown escape sequence " + token.getValue());
+            }
+            return new Literal(val);
         } else if (token.getType() == TokenType.OP_PLUS) {
             eat(TokenType.OP_PLUS);
-            return new UnaryOperator(token, highPriority());
+            return new UnaryOperator(token, parse());
         } else if (token.getType() == TokenType.OP_MINUS) {
             eat(TokenType.OP_MINUS);
-            return new UnaryOperator(token, highPriority());
+            return new UnaryOperator(token, parse());
         } else if (token.getType() == TokenType.OP_NOT) {
             eat(TokenType.OP_NOT);
-            return new UnaryOperator(token, highPriority());
+            return new UnaryOperator(token, parse());
         } else if (currentToken.getType() == TokenType.KEYWORD_VAR) {
             eat(TokenType.KEYWORD_VAR);
             if (currentToken.getType() == TokenType.VAR_NAME) {
@@ -104,7 +136,7 @@ public class Parser {
                 if (currentToken.getType() == TokenType.SEMI) {
                     token = currentToken;
                     eat(TokenType.SEMI);
-                    return new Variable(token, name, null, highPriority());
+                    return new Variable(token, name, null, parse());
                 } else if (currentToken.getType() == TokenType.ASSIGN) {
                     token = currentToken;
                     eat(TokenType.ASSIGN);
@@ -166,7 +198,7 @@ public class Parser {
             Token token = currentToken;
             TokenType type = token.getType();
             eat(type);
-            node = new BinaryOperator(node, token, highPriority());
+            node = new BinaryOperator(node, token, parse());
         }
 
         return node;
@@ -182,20 +214,20 @@ public class Parser {
         return false;
     }
 
-    public Node lowPriority() throws ParseException {
+    private Node lowPriority() throws ParseException {
         Node node = mediumPriority();
         if (currentToken.getType() == TokenType.OP_PLUS ||
                 currentToken.getType() == TokenType.OP_MINUS ||
                 currentToken.getType() == TokenType.STRING_CONCATENATE) {
             Token token = currentToken;
             eat(currentToken.getType());
-            node = new BinaryOperator(node, token, mediumPriority());
+            node = new BinaryOperator(node, token, parse());
         }
 
         return node;
     }
 
-    public Node lowerPriority() throws ParseException {
+    private Node lowerPriority() throws ParseException {
         Node node = lowPriority();
         if (currentToken.getType() == TokenType.OP_LT ||
                 currentToken.getType() == TokenType.OP_LTE ||
@@ -205,17 +237,17 @@ public class Parser {
                 currentToken.getType() == TokenType.OP_NOT_EQUAL) {
             Token token = currentToken;
             eat(currentToken.getType());
-            node = new BinaryOperator(node, token, mediumPriority());
+            node = new BinaryOperator(node, token, parse());
         }
 
         return node;
     }
 
-    public Node lowestPriority() throws ParseException {
+    private Node lowestPriority(boolean first) throws ParseException {
         Node node = lowerPriority();
         List<Node> nodes = new ArrayList<>();
         nodes.add(node);
-        while (currentToken.getType() == TokenType.KEYWORD_IF) {
+        if (currentToken.getType() == TokenType.KEYWORD_IF) {
             List<Node> statements = new ArrayList<>();
             eat(TokenType.KEYWORD_IF);
             eat(TokenType.PARENTHESIS_LEFT);
@@ -226,12 +258,41 @@ public class Parser {
                 statements.add(parse());
             }
             eat(TokenType.CURLY_BRACKET_RIGHT);
-            nodes.add(new IfNode(new Compound(statements), cond));
+            nodes.add(new ConditionalNode(new Compound(statements), cond, ConditionalType.IF));
+        } else if (currentToken.getType() == TokenType.KEYWORD_WHILE) {
+            List<Node> statements = new ArrayList<>();
+            eat(TokenType.KEYWORD_WHILE);
+            eat(TokenType.PARENTHESIS_LEFT);
+            Node cond = parse();
+            eat(TokenType.PARENTHESIS_RIGHT);
+            eat(TokenType.CURLY_BRACKET_LEFT);
+            while (currentToken.getType() != TokenType.CURLY_BRACKET_RIGHT) {
+                if (currentToken.getType() == TokenType.EOF || currentToken.getType() == TokenType.CURLY_BRACKET_RIGHT) {
+                    break;
+                }
+                statements.add(parse());
+            }
+            eat(TokenType.CURLY_BRACKET_RIGHT);
+            nodes.add(new ConditionalNode(new Compound(statements), cond, ConditionalType.WHILE));
+        }
+        if (first) {
+            while (currentToken.getType() != TokenType.EOF) {
+                nodes.add(parse());
+            }
         }
         return new Compound(nodes);
     }
 
-    public Node parse() throws ParseException {
-        return lowestPriority();
+    private Node parse(boolean first) throws ParseException {
+        return lowestPriority(first);
     }
+
+    public Node parse() throws ParseException {
+        return parse(false);
+    }
+
+    public Node getNode() throws ParseException {
+        return parse(true);
+    }
+
 }

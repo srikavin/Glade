@@ -42,27 +42,31 @@ public interface NodeVisitor {
             return visitVarOp((VariableOperator) node);
         } else if (node instanceof NoOperator) {
             return visitNoOp((NoOperator) node);
-        } else if (node instanceof IfNode) {
-            return visitIfNode((IfNode) node);
+        } else if (node instanceof ConditionalNode) {
+            return visitConditional((ConditionalNode) node);
         } else if (node instanceof ArrayOperator) {
             return visitArrayOp((ArrayOperator) node);
+        } else if (node instanceof Literal) {
+            return visitLiteral((Literal) node);
         } else if (node.getClass() == Node.class) {
             return new JPLNull();
         }
         throw new RuntimeException("No vistor found for " + node.getClass().getSimpleName());
     }
 
+    JPLDataType visitLiteral(Literal node);
+
     JPLDataType visitArrayOp(ArrayOperator node);
 
     JPLDataType visitCompound(Compound node);
 
     default JPLDataType interpret(Parser parser) {
-        return visit(parser.parse());
+        return visit(parser.getNode());
     }
 
     JPLDataType visitUnOp(UnaryOperator node);
 
     JPLDataType visitNoOp(NoOperator node);
 
-    JPLDataType visitIfNode(IfNode node);
+    JPLDataType visitConditional(ConditionalNode node);
 }

@@ -34,10 +34,8 @@ import java.util.regex.Matcher;
 import java.util.regex.Pattern;
 
 public class JPLExecutor implements PageLoadListener {
-    private final Pattern getVariable = Pattern.compile("!\\{GET\\s?\\{\\s?(.+?)\\s?}\\s?}");
-    private final Pattern postVariable = Pattern.compile("!\\{POST\\s?\\{\\s?(.+?)\\s?}\\s?}");
     private final Pattern includeFunction = Pattern.compile("!\\{INCLUDE\\s?\\{\\s?(.+?)\\s?}\\s?}");
-    private final Pattern calcFunction = Pattern.compile("<!jpl\\s(.+?)\\s?!>", Pattern.DOTALL);
+    private final Pattern calcFunction = Pattern.compile("<!jpl\\s.+? ?!>", Pattern.DOTALL);
 
     public JPLExecutor(EventManager eventManager) {
         eventManager.registerListener(this);
@@ -86,16 +84,20 @@ public class JPLExecutor implements PageLoadListener {
         Parser parser;
         Interpreter interpreter = new Interpreter(variableMap);
         while (calcMatcher.find()) {
-            System.out.println("Calc: " + calcMatcher.group(1));
-            try {
-                lexer = new JPLLexer(calcMatcher.group(1));
-                parser = new Parser(lexer);
-                interpreter.interpret(parser);
-                String result = interpreter.getOutput();
-                content = content.replaceFirst(calcMatcher.pattern().toString(), result);
-            } catch (IllegalArgumentException e) {
-                event.setStatusCode(500);
-            }
+            lexer = new JPLLexer(calcMatcher.group(0));
+            System.out.println(calcMatcher.group(0));
+//            Token token = lexer.getNextToken();
+//            while(token.getType() != TokenType.EOF ){
+//                System.out.println(token.getType() + " : " + token.getValue());
+//                token = lexer.getNextToken();
+//            }
+//            lexer = new JPLLexer(calcMatcher.group(0));
+//            Node node = new Parser(lexer).parse();
+//            lexer = new JPLLexer(calcMatcher.group(0));
+            parser = new Parser(lexer);
+            interpreter.interpret(parser);
+            String result = interpreter.getOutput();
+            content = content.replace(calcMatcher.group(0), result);
         }
 
 

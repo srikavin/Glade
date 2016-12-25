@@ -1,4 +1,3 @@
-<!DOCTYPE html>
 <!--
   ~    Copyright 2016 Infuzion
   ~
@@ -15,36 +14,12 @@
   ~    limitations under the License.
   -->
 
-<html lang="en">
-<head>
-    <!jpl var code=5 !>
-    <meta charset="UTF-8">
-    <title><!jpl
-        if(GET[error] != GET[a]){ # Get[a] should be null
-            if(GET[error] > -1){
-                echo "IT WORKS"
-           }
-        } !>
-    </title>
-    <style>
-        !{INCLUDE {/error/error.css}}
-    </style>
-</head>
-<body>
-<div id="content">
-    <header>welcome <!jpl echo POST[name] !></header>
-    <h1><!jpl echo POST[text] . " = " . POST[text] !></h1>
-    <a href="javascript:location = '/?noredir'">jpl source</a> |
-    <a href="javascript:history.back()">back</a>
-    <div id="error">
-        A web server written completely in Java.
-    </div>
-    <!jpl echo 1 + 1 !>
-    <form method="post" action="index.jpl">
-        <input name="name" placeholder="Name"><br>
-        <input name="text" placeholder="Math Problem ex: (2+2) * 3"><br>
-        <input type="submit">
-    </form>
-</div>
-</body>
-</html>
+<!jpl
+    var i = 0;
+    var code = 0;
+    while(i <= 10){
+        echo "current index: " . i . "<br>";
+        i = i+1;
+    }
+ !>
+ <a href="/?noredir">Source Code</a>
