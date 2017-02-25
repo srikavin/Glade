@@ -14,9 +14,14 @@
  *    limitations under the License.
  */
 
-package me.infuzion.web.server.jpl.data;
+package me.infuzion.web.server;
 
-public enum ConditionalType {
-    IF,
-    WHILE
+import me.infuzion.web.server.event.PageLoadEvent;
+
+public interface PageRequestEvent extends Listener {
+    void onPageLoad(PageLoadEvent event);
+
+    default Class<? extends Event> getEvent() {
+        return PageLoadEvent.class;
+    }
 }

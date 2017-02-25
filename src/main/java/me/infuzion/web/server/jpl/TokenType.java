@@ -53,6 +53,8 @@ public enum TokenType {
     PARENTHESIS_RIGHT,     // )
     ARRAY_INITIALIZER,     // {} var a = {}
     ARRAY_KEY,             // [] a[1]
+    TERNARY_START,         // ?
+    TERNARY_SEPERATOR,     // :
     EOF,
 }
 

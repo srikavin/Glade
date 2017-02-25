@@ -16,10 +16,6 @@
 
 package me.infuzion.web.server.event;
 
-import me.infuzion.web.server.Event;
-import me.infuzion.web.server.util.HttpParameters;
-import me.infuzion.web.server.util.Utilities;
-
 import java.io.UnsupportedEncodingException;
 import java.net.MalformedURLException;
 import java.net.URL;
@@ -27,6 +23,10 @@ import java.util.Collections;
 import java.util.HashMap;
 import java.util.Map;
 import java.util.TreeMap;
+import java.util.UUID;
+import me.infuzion.web.server.Event;
+import me.infuzion.web.server.util.HttpParameters;
+import me.infuzion.web.server.util.Utilities;
 
 public class PageLoadEvent extends Event {
     private final String page;
@@ -35,14 +35,20 @@ public class PageLoadEvent extends Event {
     private final HttpParameters getParameters = new HttpParameters("GET");
     private final HttpParameters postParameters = new HttpParameters("POST");
     private final Map<String, String> headers;
+    private final UUID sessionUuid;
+    private final Map<String, String> session;
     private Map<String, String> additionalHeadersToSend = new HashMap<>();
     private boolean handled = false;
     private String responseData = "";
     private int statusCode;
     private String fileEncoding = "text/html";
 
-    public PageLoadEvent(String page, String requestData, String host, String headers) throws MalformedURLException, UnsupportedEncodingException {
+    public PageLoadEvent(String page, String requestData, String host, String headers,
+        UUID sessionUuid, Map<String, String> session)
+        throws MalformedURLException, UnsupportedEncodingException {
         this.requestData = requestData;
+        this.sessionUuid = sessionUuid;
+        this.session = session;
         URL url = new URL("http://" + host + page);
         this.page = url.getPath();
         this.rawURL = page;
@@ -123,5 +129,13 @@ public class PageLoadEvent extends Event {
 
     public Map<String, String> getHeaders() {
         return headers;
+    }
+
+    public Map<String, String> getSession() {
+        return session;
+    }
+
+    public UUID getSessionUuid() {
+        return sessionUuid;
     }
 }

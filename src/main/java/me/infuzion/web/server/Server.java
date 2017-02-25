@@ -16,19 +16,23 @@
 
 package me.infuzion.web.server;
 
-import me.infuzion.web.server.event.PageLoadEvent;
-import me.infuzion.web.server.util.Utilities;
-
-import java.io.*;
+import java.io.BufferedReader;
+import java.io.IOException;
+import java.io.InputStreamReader;
+import java.io.PrintWriter;
+import java.io.UnsupportedEncodingException;
 import java.net.ServerSocket;
 import java.net.Socket;
 import java.util.HashMap;
 import java.util.Map;
 import java.util.UUID;
+import me.infuzion.web.server.event.PageLoadEvent;
+import me.infuzion.web.server.util.Utilities;
 
 public class Server implements Runnable {
+
+    private static final double version = 0.1;
     private final Map<UUID, Map<String, String>> session;
-    private final double version = 0.1;
     private boolean running;
     private ServerSocket serverSocket;
     private EventManager eventManager;
@@ -39,6 +43,10 @@ public class Server implements Runnable {
         running = true;
         eventManager = new EventManager();
         session = new HashMap<>();
+    }
+
+    public EventManager getEventManager() {
+        return eventManager;
     }
 
     public Map<UUID, Map<String, String>> getSession() {
@@ -128,28 +136,35 @@ public class Server implements Runnable {
                 contentString = new String(content);
             }
 
-            PageLoadEvent event = new PageLoadEvent(page, contentString, hostName, headers);
+            PageLoadEvent event = new PageLoadEvent(page, contentString, hostName, headers,
+                sessionuuid, session.get(sessionuuid));
             eventManager.callEvent(event);
-            System.out.println("Request recieved from: " + client.getInetAddress() + ":" + client.getPort() + " - " +
-                    event.getStatusCode() + " " + (System.currentTimeMillis() - lastRequestTime) + "ms " + event.getPage());
-            generateResponse(writer, event.getStatusCode(), event.getFileEncoding(), event.getResponseData(), sessionuuid,
-                    event.getAdditionalHeadersToSend());
+            System.out.println(
+                "Request recieved from: " + client.getInetAddress() + ":" + client.getPort() + " - "
+                    +
+                    event.getStatusCode() + " " + (System.currentTimeMillis() - lastRequestTime)
+                    + "ms " + event.getPage());
+            generateResponse(writer, event.getStatusCode(), event.getFileEncoding(),
+                event.getResponseData(), sessionuuid,
+                event.getAdditionalHeadersToSend());
         } catch (Exception e) {
             e.printStackTrace();
             generateResponse(writer, 500, "text/html",
-                    Utilities.convertStreamToString(getClass().getResourceAsStream("/web/error/500.html")),
-                    null, new HashMap<>());
+                Utilities
+                    .convertStreamToString(getClass().getResourceAsStream("/web/error/500.html")),
+                null, new HashMap<>());
         }
     }
 
-    private void generateResponse(PrintWriter writer, int status, String contentType, String responseData, UUID sessionuuid,
-                                  Map<String, String> headers)
-            throws UnsupportedEncodingException {
+    private void generateResponse(PrintWriter writer, int status, String contentType,
+        String responseData, UUID sessionuuid,
+        Map<String, String> headers)
+        throws UnsupportedEncodingException {
         writer.println("HTTP/1.1 " + status + "\r");
         writer.println("Content-Type: " + contentType + "; charset=UTF-8\r");
         writer.println("Content-Length: " + responseData.getBytes("UTF-8").length + "\r");
         writer.println("X-Powered-By: Java Web Server v" + version + "\r");
-        for(Map.Entry e : headers.entrySet()){
+        for (Map.Entry e : headers.entrySet()) {
             writer.println(e.getKey() + ": " + e.getValue());
         }
 
@@ -159,7 +174,8 @@ public class Server implements Runnable {
             writer.println("Set-Cookie:session=" + random + "\r");
         }
 
-        writer.println("X-Request-Time: " + (System.currentTimeMillis() - lastRequestTime) + "\r\n");
+        writer
+            .println("X-Request-Time: " + (System.currentTimeMillis() - lastRequestTime) + "\r\n");
 
         writer.println(responseData);
         writer.flush();

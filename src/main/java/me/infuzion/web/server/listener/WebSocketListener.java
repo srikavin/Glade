@@ -16,16 +16,15 @@
 
 package me.infuzion.web.server.listener;
 
-import me.infuzion.web.server.EventManager;
-import me.infuzion.web.server.PageLoadListener;
-import me.infuzion.web.server.event.PageLoadEvent;
-
 import java.io.UnsupportedEncodingException;
 import java.security.MessageDigest;
 import java.security.NoSuchAlgorithmException;
 import java.util.Map;
+import me.infuzion.web.server.EventManager;
+import me.infuzion.web.server.PageRequestEvent;
+import me.infuzion.web.server.event.PageLoadEvent;
 
-public class WebSocketListener implements PageLoadListener {
+public class WebSocketListener implements PageRequestEvent {
     public final String websocketGUID = "258EAFA5-E914-47DA-95CA-C5AB0DC85B11";
 
     public WebSocketListener(EventManager manager){

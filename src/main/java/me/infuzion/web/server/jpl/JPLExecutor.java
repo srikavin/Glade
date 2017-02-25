@@ -16,8 +16,14 @@
 
 package me.infuzion.web.server.jpl;
 
+import java.io.InputStream;
+import java.util.HashMap;
+import java.util.List;
+import java.util.Map;
+import java.util.regex.Matcher;
+import java.util.regex.Pattern;
 import me.infuzion.web.server.EventManager;
-import me.infuzion.web.server.PageLoadListener;
+import me.infuzion.web.server.PageRequestEvent;
 import me.infuzion.web.server.event.PageLoadEvent;
 import me.infuzion.web.server.jpl.data.jpl.JPLArray;
 import me.infuzion.web.server.jpl.data.jpl.JPLString;
@@ -26,14 +32,7 @@ import me.infuzion.web.server.jpl.data.node.Variable;
 import me.infuzion.web.server.util.HttpParameters;
 import me.infuzion.web.server.util.Utilities;
 
-import java.io.InputStream;
-import java.util.HashMap;
-import java.util.List;
-import java.util.Map;
-import java.util.regex.Matcher;
-import java.util.regex.Pattern;
-
-public class JPLExecutor implements PageLoadListener {
+public class JPLExecutor implements PageRequestEvent {
     private final Pattern includeFunction = Pattern.compile("!\\{INCLUDE\\s?\\{\\s?(.+?)\\s?}\\s?}");
     private final Pattern calcFunction = Pattern.compile("<!jpl\\s.+? ?!>", Pattern.DOTALL);
 
@@ -55,7 +54,7 @@ public class JPLExecutor implements PageLoadListener {
             if (stream != null) {
                 String content = Utilities.convertStreamToString(stream);
 
-                content = parseVariables(content, event, 0);
+                content = parseVariables(content, event);
 
                 event.setResponseData(content);
                 event.setHandled(true);
@@ -64,7 +63,7 @@ public class JPLExecutor implements PageLoadListener {
         }
     }
 
-    private String parseVariables(String content, PageLoadEvent event, int a) {
+    private String parseVariables(String content, PageLoadEvent event) {
         Map<String, Variable> variableMap = new HashMap<>();
         JPLArray array = new JPLArray();
         for (Map.Entry<String, List<String>> e : event.getGetParameters().getParameters().entrySet()) {
@@ -76,8 +75,19 @@ public class JPLExecutor implements PageLoadListener {
             array.set(e.getKey(), new JPLString(e.getValue().get(0)));
         }
         Variable post = new Variable(null, "POST", array, new Node());
+
+        array = new JPLArray();
+        for (Map.Entry<String, String> e : event.getSession().entrySet()) {
+            array.set(e.getKey(), new JPLString(e.getValue()));
+        }
+        Variable session = new Variable(null, "SESSION", array, new Node());
+
         variableMap.put("GET", get);
         variableMap.put("POST", post);
+        variableMap.put("SESSION", session);
+
+        Matcher includeMatcher = includeFunction.matcher(content);
+        content = parseIncludes(includeMatcher, content, event);
 
         Matcher calcMatcher = calcFunction.matcher(content);
         JPLLexer lexer;
@@ -85,21 +95,11 @@ public class JPLExecutor implements PageLoadListener {
         Interpreter interpreter = new Interpreter(variableMap);
         while (calcMatcher.find()) {
             lexer = new JPLLexer(calcMatcher.group(0));
-            System.out.println(calcMatcher.group(0));
-//            Token token = lexer.getNextToken();
-//            while(token.getType() != TokenType.EOF ){
-//                System.out.println(token.getType() + " : " + token.getValue());
-//                token = lexer.getNextToken();
-//            }
-//            lexer = new JPLLexer(calcMatcher.group(0));
-//            Node node = new Parser(lexer).parse();
-//            lexer = new JPLLexer(calcMatcher.group(0));
             parser = new Parser(lexer);
             interpreter.interpret(parser);
             String result = interpreter.getOutput();
             content = content.replace(calcMatcher.group(0), result);
         }
-
 
         if (event.getStatusCode() != 500) {
             event.setStatusCode(200);
@@ -108,12 +108,6 @@ public class JPLExecutor implements PageLoadListener {
         }
 
 
-        Matcher includeMatcher = includeFunction.matcher(content);
-        content = parseIncludes(includeMatcher, content, event);
-
-        if (a == 0) {
-            parseVariables(content, event, a + 1);
-        }
         return content;
     }
 
@@ -127,7 +121,7 @@ public class JPLExecutor implements PageLoadListener {
             InputStream stream = getClass().getResourceAsStream("/web" + fileName);
             String fileContent = Utilities.convertStreamToString(stream);
             if (fileName.endsWith(".jpl")) {
-                fileContent = parseVariables(fileContent, event, 1);
+                fileContent = parseVariables(fileContent, event);
             }
             if (event.getStatusCode() == 500) {
                 return "";

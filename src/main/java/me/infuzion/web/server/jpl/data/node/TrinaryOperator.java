@@ -1,5 +1,5 @@
 /*
- *    Copyright 2016 Infuzion
+ *    Copyright 2017 Infuzion
  *
  *    Licensed under the Apache License, Version 2.0 (the "License");
  *    you may not use this file except in compliance with the License.
@@ -14,14 +14,23 @@
  *    limitations under the License.
  */
 
-package me.infuzion.web.server;
+package me.infuzion.web.server.jpl.data.node;
 
-import me.infuzion.web.server.event.PageLoadEvent;
+import me.infuzion.web.server.jpl.Token;
 
-public interface PageLoadListener extends Listener {
-    void onPageLoad(PageLoadEvent event);
+public class TrinaryOperator extends Node {
 
-    default Class<? extends Event> getEvent() {
-        return PageLoadEvent.class;
+    public final Node left;
+    public final Node right;
+    public final Node center;
+    public final Token token;
+
+
+    public TrinaryOperator(Node left, Node center, Node right, Token token) {
+        this.left = left;
+        this.center = center;
+        this.right = right;
+        this.token = token;
     }
+
 }

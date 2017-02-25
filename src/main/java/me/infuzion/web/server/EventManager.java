@@ -16,38 +16,37 @@
 
 package me.infuzion.web.server;
 
+import java.util.ArrayList;
+import java.util.List;
 import me.infuzion.web.server.event.PageLoadEvent;
-import me.infuzion.web.server.jpl.JPLExecutor;
 import me.infuzion.web.server.listener.RedirectListener;
 import me.infuzion.web.server.listener.StatusListener;
 
-import java.util.ArrayList;
-import java.util.List;
-
 public class EventManager {
-    private List<PageLoadListener> eventListeners = new ArrayList<>();
-    private List<PageLoadListener> eventListenersMonitor = new ArrayList<>();
+
+    private List<PageRequestEvent> eventListeners = new ArrayList<>();
+    private List<PageRequestEvent> eventListenersMonitor = new ArrayList<>();
 
     public EventManager() {
         new StatusListener(this);
         new RedirectListener(this);
-        new JPLExecutor(this);
+//        new JPLExecutor(this);
     }
 
     public void callEvent(PageLoadEvent event) {
-        for (PageLoadListener e : eventListeners) {
+        for (PageRequestEvent e : eventListeners) {
             e.onPageLoad(event);
         }
-        for (PageLoadListener e : eventListenersMonitor) {
+        for (PageRequestEvent e : eventListenersMonitor) {
             e.onPageLoad(event);
         }
     }
 
-    public void registerListener(PageLoadListener listener) {
+    public void registerListener(PageRequestEvent listener) {
         registerListener(listener, false);
     }
 
-    public void registerListener(PageLoadListener listener, boolean monitor) {
+    public void registerListener(PageRequestEvent listener, boolean monitor) {
         if (monitor) {
             eventListenersMonitor.add(listener);
         } else {

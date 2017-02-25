@@ -16,14 +16,13 @@
 
 package me.infuzion.web.server.listener;
 
+import java.io.InputStream;
 import me.infuzion.web.server.EventManager;
-import me.infuzion.web.server.PageLoadListener;
+import me.infuzion.web.server.PageRequestEvent;
 import me.infuzion.web.server.event.PageLoadEvent;
 import me.infuzion.web.server.util.Utilities;
 
-import java.io.InputStream;
-
-public class RedirectListener implements PageLoadListener {
+public class RedirectListener implements PageRequestEvent {
 
     public RedirectListener(EventManager eventManager){
         eventManager.registerListener(this);

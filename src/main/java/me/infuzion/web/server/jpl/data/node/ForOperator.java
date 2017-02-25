@@ -1,5 +1,5 @@
 /*
- *    Copyright 2016 Infuzion
+ *    Copyright 2017 Infuzion
  *
  *    Licensed under the Apache License, Version 2.0 (the "License");
  *    you may not use this file except in compliance with the License.
@@ -14,9 +14,16 @@
  *    limitations under the License.
  */
 
-package me.infuzion.web.server.jpl.data;
+package me.infuzion.web.server.jpl.data.node;
 
-public enum ConditionalType {
-    IF,
-    WHILE
+import me.infuzion.web.server.jpl.Token;
+
+public class ForOperator extends TrinaryOperator {
+
+    public final Compound statements;
+
+    public ForOperator(Node left, Node center, Node right, Compound statements, Token token) {
+        super(left, center, right, token);
+        this.statements = statements;
+    }
 }

@@ -19,6 +19,7 @@ package me.infuzion.web.server.jpl;
 import me.infuzion.web.server.jpl.exception.ParseException;
 
 public class JPLLexer {
+
     private static final char[] escapedCharacters = {'n', '"'};
     private final String text;
     private Character currentChar;
@@ -36,7 +37,7 @@ public class JPLLexer {
     }
 
     private double getNumber() {
-        String result = "";
+        StringBuilder result = new StringBuilder();
         boolean decimalOccurred = false;
         while (currentChar != null && (Character.isDigit(currentChar) || currentChar == '.')) {
             if (currentChar == '.') {
@@ -45,19 +46,19 @@ public class JPLLexer {
                 }
                 decimalOccurred = true;
             }
-            result += currentChar;
+            result.append(currentChar);
             advance();
         }
-        return Double.parseDouble(result);
+        return Double.parseDouble(result.toString());
     }
 
     private Token parseAlpha() {
-        String result = "";
+        StringBuilder result = new StringBuilder();
         while (currentChar != null && Character.isAlphabetic(currentChar)) {
-            result += currentChar;
+            result.append(currentChar);
             advance();
         }
-        switch (result) {
+        switch (result.toString()) {
             case "if":
                 return new Token(TokenType.KEYWORD_IF, "if", row, column);
             case "echo":
@@ -77,7 +78,7 @@ public class JPLLexer {
             case "elif":
                 return new Token(TokenType.KEYWORD_ELSE_IF, "elif", row, column);
             default:
-                return new Token(TokenType.VAR_NAME, result, row, column);
+                return new Token(TokenType.VAR_NAME, result.toString(), row, column);
         }
     }
 
@@ -174,11 +175,6 @@ public class JPLLexer {
                 continue;
             }
 
-            if (currentChar == ';') {
-                advance();
-                continue;
-            }
-
             if (Character.isAlphabetic(currentChar)) {
                 return parseAlpha();
             }
@@ -186,6 +182,16 @@ public class JPLLexer {
             if (currentChar == ';') {
                 advance();
                 return new Token(TokenType.SEMI, ";", row, column);
+            }
+
+            if (currentChar == '?') {
+                advance();
+                return new Token(TokenType.TERNARY_START, "?", row, column);
+            }
+
+            if (currentChar == ':') {
+                advance();
+                return new Token(TokenType.TERNARY_SEPERATOR, ":", row, column);
             }
 
             if (currentChar == '<') {
@@ -208,15 +214,15 @@ public class JPLLexer {
 
             if (currentChar == '"') {
                 advance();
-                String result = "";
+                StringBuilder result = new StringBuilder();
                 while (currentChar != null) {
                     if (currentChar == '\\') {
                         switch (parseEscapedChars()) {
                             case 'n':
-                                result += '\n';
+                                result.append('\n');
                                 break;
                             case '"':
-                                result += '"';
+                                result.append('"');
                                 break;
                         }
                         continue;
@@ -224,11 +230,11 @@ public class JPLLexer {
                         advance();
                         break;
                     }
-                    result += currentChar;
+                    result.append(currentChar);
                     advance();
                 }
                 advance();
-                return new Token(TokenType.STRING_LITERAL, result, row, column);
+                return new Token(TokenType.STRING_LITERAL, result.toString(), row, column);
             }
 
             if (currentChar == '!') {
@@ -251,13 +257,13 @@ public class JPLLexer {
 
             if (currentChar == '[') {
                 advance();
-                String key = "";
+                StringBuilder key = new StringBuilder();
                 while (currentChar != ']') {
-                    key += currentChar;
+                    key.append(currentChar);
                     advance();
                 }
                 advance();
-                return new Token(TokenType.ARRAY_KEY, key, row, column);
+                return new Token(TokenType.ARRAY_KEY, key.toString(), row, column);
             }
 
             if (currentChar == '}') {

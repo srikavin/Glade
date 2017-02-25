@@ -16,20 +16,38 @@
 
 package me.infuzion.web.server.jpl;
 
-import me.infuzion.web.server.jpl.data.ConditionalType;
-import me.infuzion.web.server.jpl.data.NodeVisitor;
-import me.infuzion.web.server.jpl.data.jpl.*;
-import me.infuzion.web.server.jpl.data.node.*;
-import me.infuzion.web.server.jpl.data.node.Number;
-
 import java.util.HashMap;
 import java.util.Map;
+import me.infuzion.web.server.jpl.data.ConditionalType;
+import me.infuzion.web.server.jpl.data.NodeVisitor;
+import me.infuzion.web.server.jpl.data.jpl.JPLArray;
+import me.infuzion.web.server.jpl.data.jpl.JPLBoolean;
+import me.infuzion.web.server.jpl.data.jpl.JPLDataType;
+import me.infuzion.web.server.jpl.data.jpl.JPLNull;
+import me.infuzion.web.server.jpl.data.jpl.JPLNumber;
+import me.infuzion.web.server.jpl.data.jpl.JPLString;
+import me.infuzion.web.server.jpl.data.node.ArrayOperator;
+import me.infuzion.web.server.jpl.data.node.BinaryOperator;
+import me.infuzion.web.server.jpl.data.node.Compound;
+import me.infuzion.web.server.jpl.data.node.ConditionalNode;
+import me.infuzion.web.server.jpl.data.node.ForOperator;
+import me.infuzion.web.server.jpl.data.node.Literal;
+import me.infuzion.web.server.jpl.data.node.NoOpType;
+import me.infuzion.web.server.jpl.data.node.NoOperator;
+import me.infuzion.web.server.jpl.data.node.Node;
+import me.infuzion.web.server.jpl.data.node.Number;
+import me.infuzion.web.server.jpl.data.node.TrinaryOperator;
+import me.infuzion.web.server.jpl.data.node.UnaryOperator;
+import me.infuzion.web.server.jpl.data.node.Variable;
+import me.infuzion.web.server.jpl.data.node.VariableOperator;
 
 public class Interpreter implements NodeVisitor {
+
     private String output = "";
-    private Map<String, Variable> variables = new HashMap<>();
+    private Map<String, Variable> variables;
 
     public Interpreter() {
+        this(new HashMap<>());
     }
 
     public Interpreter(Map<String, Variable> variables) {
@@ -54,7 +72,8 @@ public class Interpreter implements NodeVisitor {
             toReturn = Math.pow(left, right);
         }
         if (toReturn == null) {
-            throw new RuntimeException("Operator: " + node.token.getType().toString() + " not found!");
+            throw new RuntimeException(
+                "Operator: " + node.token.getType().toString() + " not found!");
         }
         return new JPLNumber(toReturn);
     }
@@ -75,16 +94,43 @@ public class Interpreter implements NodeVisitor {
         JPLDataType toRet = visit(notNoOp);
         Variable v = new Variable(node.token, name, toRet, new Node());
 
-
         variables.put(name, v);
         return toRet;
     }
 
-    @SuppressWarnings("Duplicates")
+    @Override
+    public JPLDataType visitTriOp(TrinaryOperator node) {
+        if (node.token.getType() == TokenType.TERNARY_START) {
+            JPLBoolean cond = visit(node.left).asBoolean();
+            if (cond.getValue()) {
+                return visit(node.center);
+            } else {
+                return visit(node.right);
+            }
+        }
+        if (node instanceof ForOperator) {
+            if (node.token.getType() == TokenType.KEYWORD_FOR) {
+                if (node.left instanceof BinaryOperator) {
+                    if (((BinaryOperator) node.left).left instanceof VariableOperator) {
+                        visit(node.left);
+                        String name = ((VariableOperator) ((BinaryOperator) node.left).left).name;
+                        JPLBoolean cond = visit(node.center).asBoolean();
+                        while (cond.getValue()) {
+                            visit(node.right);
+                            cond = visit(node.center).asBoolean();
+                            visit(((ForOperator) node).statements);
+                        }
+                        variables.remove(name);
+                        return new JPLNull();
+                    }
+                }
+            }
+        }
+        throw new RuntimeException("Unknown Operator: " + node.token.getType());
+    }
+
     @Override
     public JPLDataType visitBinOp(BinaryOperator node) {
-//        System.out.println("LEFT: " + node.left.getClass().getSimpleName());
-//        System.out.println("Right: " + node.right.getClass().getSimpleName());
         if (node.token.getType() == TokenType.ASSIGN) {
             return assignVariable(node);
         } else if (node.token.hasBooleanOperator()) {
@@ -92,7 +138,8 @@ public class Interpreter implements NodeVisitor {
         } else if (node.token.hasNumericOperator()) {
             return numberOperation(node);
         } else if (node.token.getType() == TokenType.STRING_CONCATENATE) {
-            return new JPLString(visit(node.left).asString().toString() + visit(node.right).asString().toString());
+            return new JPLString(
+                visit(node.left).asString().toString() + visit(node.right).asString().toString());
         } else {
             throw new RuntimeException("Unknown Operator: " + node.token.getType());
         }
@@ -139,7 +186,8 @@ public class Interpreter implements NodeVisitor {
             Variable n = new Variable(v.token, node.varName, array, node);
             variables.put(node.varName, n);
         } else {
-            return ((JPLArray) variables.get(node.varName).value).get(node.key.asString().toString());
+            return ((JPLArray) variables.get(node.varName).value)
+                .get(node.key.asString().toString());
         }
         return getVariable(node.varName).value.asString();
     }
@@ -186,7 +234,8 @@ public class Interpreter implements NodeVisitor {
         if (node.type == NoOpType.NONE) {
             return node.value;
         }
-        throw new RuntimeException("Unknown no operator type:" + node.getClass().getCanonicalName());
+        throw new RuntimeException(
+            "Unknown no operator type:" + node.getClass().getCanonicalName());
     }
 
     @Override
@@ -216,16 +265,20 @@ public class Interpreter implements NodeVisitor {
                 return new JPLBoolean(visit(node.left).equals(visit(node.right)));
             case OP_LT:
                 return new JPLBoolean(
-                        visit(node.left).asNumber().getValue() < visit(node.right).asNumber().getValue());
+                    visit(node.left).asNumber().getValue() < visit(node.right).asNumber()
+                        .getValue());
             case OP_LTE:
                 return new JPLBoolean(
-                        visit(node.left).asNumber().getValue() <= visit(node.right).asNumber().getValue());
+                    visit(node.left).asNumber().getValue() <= visit(node.right).asNumber()
+                        .getValue());
             case OP_GT:
                 return new JPLBoolean(
-                        visit(node.left).asNumber().getValue() > visit(node.right).asNumber().getValue());
+                    visit(node.left).asNumber().getValue() > visit(node.right).asNumber()
+                        .getValue());
             case OP_GTE:
                 return new JPLBoolean(
-                        visit(node.left).asNumber().getValue() >= visit(node.right).asNumber().getValue());
+                    visit(node.left).asNumber().getValue() >= visit(node.right).asNumber()
+                        .getValue());
         }
         throw new RuntimeException("Unknown Operator: " + node.token.getType());
     }

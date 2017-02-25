@@ -13,13 +13,21 @@
   ~    See the License for the specific language governing permissions and
   ~    limitations under the License.
   -->
-
 <!jpl
+#While statement
     var i = 0;
-    var code = 0;
-    while(i <= 10){
+var code = 2;
+while(i <= 10) {
         echo "current index: " . i . "<br>";
-        i = i+1;
+#i = i + 1;
     }
+
+#For statement
+for(var a = 0; a < 25; a = a+1){
+echo "current index of for loop " . a . "<br>";
+}
+
  !>
- <a href="/?noredir">Source Code</a>
+<html>
+<a href="/?noredir">Source Code</a>
+</html>

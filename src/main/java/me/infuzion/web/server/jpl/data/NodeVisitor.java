@@ -19,8 +19,17 @@ package me.infuzion.web.server.jpl.data;
 import me.infuzion.web.server.jpl.Parser;
 import me.infuzion.web.server.jpl.data.jpl.JPLDataType;
 import me.infuzion.web.server.jpl.data.jpl.JPLNull;
-import me.infuzion.web.server.jpl.data.node.*;
+import me.infuzion.web.server.jpl.data.node.ArrayOperator;
+import me.infuzion.web.server.jpl.data.node.BinaryOperator;
+import me.infuzion.web.server.jpl.data.node.Compound;
+import me.infuzion.web.server.jpl.data.node.ConditionalNode;
+import me.infuzion.web.server.jpl.data.node.Literal;
+import me.infuzion.web.server.jpl.data.node.NoOperator;
+import me.infuzion.web.server.jpl.data.node.Node;
 import me.infuzion.web.server.jpl.data.node.Number;
+import me.infuzion.web.server.jpl.data.node.TrinaryOperator;
+import me.infuzion.web.server.jpl.data.node.UnaryOperator;
+import me.infuzion.web.server.jpl.data.node.VariableOperator;
 
 public interface NodeVisitor {
     JPLDataType visitBinOp(BinaryOperator node);
@@ -48,11 +57,15 @@ public interface NodeVisitor {
             return visitArrayOp((ArrayOperator) node);
         } else if (node instanceof Literal) {
             return visitLiteral((Literal) node);
+        } else if (node instanceof TrinaryOperator) {
+            return visitTriOp((TrinaryOperator) node);
         } else if (node.getClass() == Node.class) {
             return new JPLNull();
         }
         throw new RuntimeException("No vistor found for " + node.getClass().getSimpleName());
     }
+
+    JPLDataType visitTriOp(TrinaryOperator operator);
 
     JPLDataType visitLiteral(Literal node);
 

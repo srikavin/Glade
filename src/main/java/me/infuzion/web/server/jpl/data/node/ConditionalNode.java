@@ -21,7 +21,6 @@ import me.infuzion.web.server.jpl.data.ConditionalType;
 public class ConditionalNode extends Node {
     public final Compound nodes;
     public final Node conditional;
-
     public final ConditionalType type;
 
     public ConditionalNode(Compound nodes, Node conditional, ConditionalType type) {
