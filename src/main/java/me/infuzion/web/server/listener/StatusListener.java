@@ -39,7 +39,7 @@ public class StatusListener implements PageRequestEvent {
 
     @Override
     public void onPageLoad(PageLoadEvent event) {
-        if (event.getStatusCode() != 200 && event.getStatusCode() == 0) {
+        if (event.getStatusCode() != 200 && !event.isHandled()) {
             if (event.getStatusCode() != 0 && !event.isHandled()) {
                 handleStatus(event);
                 return;
