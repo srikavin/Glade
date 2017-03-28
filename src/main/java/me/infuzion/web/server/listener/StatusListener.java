@@ -18,27 +18,30 @@ package me.infuzion.web.server.listener;
 
 import com.github.amr.mimetypes.MimeType;
 import com.github.amr.mimetypes.MimeTypes;
+import me.infuzion.web.server.EventListener;
+import me.infuzion.web.server.event.EventHandler;
+import me.infuzion.web.server.event.EventManager;
+import me.infuzion.web.server.event.EventPriority;
+import me.infuzion.web.server.event.PageRequestEvent;
+import me.infuzion.web.server.util.Utilities;
+
 import java.io.InputStream;
 import java.net.URISyntaxException;
 import java.nio.file.Files;
 import java.nio.file.Paths;
-import me.infuzion.web.server.EventManager;
-import me.infuzion.web.server.PageRequestEvent;
-import me.infuzion.web.server.event.PageLoadEvent;
-import me.infuzion.web.server.util.Utilities;
 
-public class StatusListener implements PageRequestEvent {
+public class StatusListener implements EventListener {
 
     private MimeTypes mimeTypesInstance;
 
     public StatusListener(EventManager eventManager) {
         mimeTypesInstance = MimeTypes.getInstance();
         mimeTypesInstance.register(new MimeType("text/html", "jpl"));
-        eventManager.registerListener(this, true);
+        eventManager.registerListener(this);
     }
 
-    @Override
-    public void onPageLoad(PageLoadEvent event) {
+    @EventHandler(priority = EventPriority.MONITOR)
+    public void onPageLoad(PageRequestEvent event) {
         if (event.getStatusCode() != 200 && !event.isHandled()) {
             if (event.getStatusCode() != 0 && !event.isHandled()) {
                 handleStatus(event);
@@ -69,7 +72,7 @@ public class StatusListener implements PageRequestEvent {
         }
     }
 
-    private void handleStatus(PageLoadEvent event) {
+    private void handleStatus(PageRequestEvent event) {
         if (event.getStatusCode() != 200 && event.getStatusCode() != 0
             && event.getResponseData().length() <= 0) {
             InputStream stream = getClass()
@@ -82,12 +85,7 @@ public class StatusListener implements PageRequestEvent {
         }
     }
 
-    private String getContentTypeFromExtension(String extension) {
-        return mimeTypesInstance.getByExtension(extension).getMimeType();
-    }
-
     private String getContentTypeFromFileName(String name) {
-        String extension = name.substring(name.lastIndexOf(".") + 1);
-        return getContentTypeFromExtension(extension);
+        return name.substring(name.lastIndexOf(".") + 1);
     }
 }

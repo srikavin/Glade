@@ -16,24 +16,20 @@
 
 package me.infuzion.web.server.event;
 
-import java.io.UnsupportedEncodingException;
-import java.net.MalformedURLException;
-import java.net.URL;
-import java.util.Collections;
-import java.util.HashMap;
-import java.util.Map;
-import java.util.TreeMap;
-import java.util.UUID;
-import me.infuzion.web.server.Event;
 import me.infuzion.web.server.util.HttpParameters;
 import me.infuzion.web.server.util.Utilities;
 
-public class PageLoadEvent extends Event {
+import java.io.UnsupportedEncodingException;
+import java.net.MalformedURLException;
+import java.net.URL;
+import java.util.*;
+
+public class PageRequestEvent extends Event {
     private final String page;
     private final String rawURL;
     private final String requestData;
-    private final HttpParameters getParameters = new HttpParameters("GET");
-    private final HttpParameters postParameters = new HttpParameters("POST");
+    private final HttpParameters getParameters;
+    private final HttpParameters postParameters;
     private final Map<String, String> headers;
     private final UUID sessionUuid;
     private final Map<String, String> session;
@@ -43,10 +39,12 @@ public class PageLoadEvent extends Event {
     private int statusCode;
     private String fileEncoding = "text/html";
 
-    public PageLoadEvent(String page, String requestData, String host, String headers,
-        UUID sessionUuid, Map<String, String> session)
+    public PageRequestEvent(String page, String requestData, String host, String headers,
+                            UUID sessionUuid, Map<String, String> session)
         throws MalformedURLException, UnsupportedEncodingException {
         this.requestData = requestData;
+        getParameters = new HttpParameters("GET");
+        postParameters = new HttpParameters("POST");
         this.sessionUuid = sessionUuid;
         this.session = session;
         URL url = new URL("http://" + host + page);
@@ -65,6 +63,21 @@ public class PageLoadEvent extends Event {
             }
         }
         this.headers = Collections.unmodifiableMap(temp);
+    }
+
+    public PageRequestEvent(PageRequestEvent e) {
+        this.additionalHeadersToSend = e.additionalHeadersToSend;
+        this.page = e.page;
+        this.getParameters = e.getParameters;
+        this.postParameters = e.postParameters;
+        this.rawURL = e.rawURL;
+        this.headers = e.headers;
+        this.sessionUuid = e.sessionUuid;
+        this.session = e.session;
+        this.handled = e.handled;
+        this.responseData = e.responseData;
+        this.fileEncoding = e.fileEncoding;
+        this.requestData = e.requestData;
     }
 
     public String getPage() {

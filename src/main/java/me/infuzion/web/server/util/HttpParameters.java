@@ -16,10 +16,7 @@
 
 package me.infuzion.web.server.util;
 
-import java.util.HashMap;
-import java.util.Iterator;
-import java.util.List;
-import java.util.Map;
+import java.util.*;
 
 public class HttpParameters implements Iterable<Map.Entry<String, List<String>>> {
     private final String method;
@@ -44,7 +41,11 @@ public class HttpParameters implements Iterable<Map.Entry<String, List<String>>>
     }
 
     public List<String> get(String name){
-        return parameters.get(name);
+        return parameters.getOrDefault(name, new ArrayList<>());
+    }
+
+    public boolean isEmpty() {
+        return parameters.isEmpty();
     }
 
     @Override

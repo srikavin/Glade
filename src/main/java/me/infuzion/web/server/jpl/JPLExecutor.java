@@ -16,15 +16,10 @@
 
 package me.infuzion.web.server.jpl;
 
-import java.io.InputStream;
-import java.util.HashMap;
-import java.util.List;
-import java.util.Map;
-import java.util.regex.Matcher;
-import java.util.regex.Pattern;
-import me.infuzion.web.server.EventManager;
-import me.infuzion.web.server.PageRequestEvent;
-import me.infuzion.web.server.event.PageLoadEvent;
+import me.infuzion.web.server.EventListener;
+import me.infuzion.web.server.event.EventHandler;
+import me.infuzion.web.server.event.EventManager;
+import me.infuzion.web.server.event.PageRequestEvent;
 import me.infuzion.web.server.jpl.data.jpl.JPLArray;
 import me.infuzion.web.server.jpl.data.jpl.JPLString;
 import me.infuzion.web.server.jpl.data.node.Node;
@@ -32,7 +27,14 @@ import me.infuzion.web.server.jpl.data.node.Variable;
 import me.infuzion.web.server.util.HttpParameters;
 import me.infuzion.web.server.util.Utilities;
 
-public class JPLExecutor implements PageRequestEvent {
+import java.io.InputStream;
+import java.util.HashMap;
+import java.util.List;
+import java.util.Map;
+import java.util.regex.Matcher;
+import java.util.regex.Pattern;
+
+public class JPLExecutor implements EventListener {
     private final Pattern includeFunction = Pattern.compile("!\\{INCLUDE\\s?\\{\\s?(.+?)\\s?}\\s?}");
     private final Pattern calcFunction = Pattern.compile("<!jpl\\s.+? ?!>", Pattern.DOTALL);
 
@@ -40,8 +42,8 @@ public class JPLExecutor implements PageRequestEvent {
         eventManager.registerListener(this);
     }
 
-    @Override
-    public void onPageLoad(PageLoadEvent event) {
+    @EventHandler
+    public void onPageLoad(PageRequestEvent event) {
         System.out.println(event.getPage());
         if (event.getPage().endsWith(".jpl") && !event.isHandled()) {
             InputStream stream = getClass().getResourceAsStream("/web/" + event.getPage());
@@ -63,7 +65,7 @@ public class JPLExecutor implements PageRequestEvent {
         }
     }
 
-    private String parseVariables(String content, PageLoadEvent event) {
+    private String parseVariables(String content, PageRequestEvent event) {
         Map<String, Variable> variableMap = new HashMap<>();
         JPLArray array = new JPLArray();
         for (Map.Entry<String, List<String>> e : event.getGetParameters().getParameters().entrySet()) {
@@ -111,7 +113,7 @@ public class JPLExecutor implements PageRequestEvent {
         return content;
     }
 
-    private String parseIncludes(Matcher matcher, String content, PageLoadEvent event) {
+    private String parseIncludes(Matcher matcher, String content, PageRequestEvent event) {
         while (matcher.find()) {
             String fileName = matcher.group(1);
             if (fileName.equalsIgnoreCase(event.getPage())) {

@@ -16,31 +16,24 @@
 
 package me.infuzion.web.server.listener;
 
-import java.io.InputStream;
-import me.infuzion.web.server.EventManager;
-import me.infuzion.web.server.PageRequestEvent;
-import me.infuzion.web.server.event.PageLoadEvent;
-import me.infuzion.web.server.util.Utilities;
+import me.infuzion.web.server.EventListener;
+import me.infuzion.web.server.event.EventHandler;
+import me.infuzion.web.server.event.EventManager;
+import me.infuzion.web.server.event.EventPriority;
+import me.infuzion.web.server.event.PageRequestEvent;
 
-public class RedirectListener implements PageRequestEvent {
+public class RedirectListener implements EventListener {
 
-    public RedirectListener(EventManager eventManager){
+    public RedirectListener(EventManager eventManager) {
         eventManager.registerListener(this);
     }
 
-    @Override
-    public void onPageLoad(PageLoadEvent event) {
-        if(event.getPage().endsWith("/") && !event.isHandled()){
-            if(event.getGetParameters().getParameters().containsKey("noredir")){
-                event.setStatusCode(200);
-                event.setFileEncoding("text/text");
-                InputStream stream = getClass().getResourceAsStream("/web/index.jpl");
-                event.setResponseData(Utilities.convertStreamToString(stream));
-            } else {
-                event.setStatusCode(302);
-                event.addHeader("Location", "/index.jpl");
-                event.setResponseData("");
-            }
+    @EventHandler(priority = EventPriority.MONITOR)
+    public void onPageLoad(PageRequestEvent event) {
+        if (event.getPage().endsWith("/") && !event.isHandled()) {
+            event.setStatusCode(302);
+            event.addHeader("Location", "/index.html");
+            event.setResponseData("");
         }
     }
 }

@@ -16,23 +16,37 @@
 
 package me.infuzion.web.server.listener;
 
+import me.infuzion.web.server.EventListener;
+import me.infuzion.web.server.event.EventHandler;
+import me.infuzion.web.server.event.EventManager;
+import me.infuzion.web.server.event.PageRequestEvent;
+
 import java.io.UnsupportedEncodingException;
 import java.security.MessageDigest;
 import java.security.NoSuchAlgorithmException;
+import java.util.Formatter;
 import java.util.Map;
-import me.infuzion.web.server.EventManager;
-import me.infuzion.web.server.PageRequestEvent;
-import me.infuzion.web.server.event.PageLoadEvent;
 
-public class WebSocketListener implements PageRequestEvent {
-    public final String websocketGUID = "258EAFA5-E914-47DA-95CA-C5AB0DC85B11";
+public class WebSocketListener implements EventListener {
 
-    public WebSocketListener(EventManager manager){
+    private final static String websocketGUID = "258EAFA5-E914-47DA-95CA-C5AB0DC85B11";
+
+    public WebSocketListener(EventManager manager) {
         manager.registerListener(this);
     }
 
-    @Override
-    public void onPageLoad(PageLoadEvent event) {
+    private static String byteToHex(final byte[] hash) {
+        Formatter formatter = new Formatter();
+        for (byte b : hash) {
+            formatter.format("%02x", b);
+        }
+        String result = formatter.toString();
+        formatter.close();
+        return result;
+    }
+
+    @EventHandler
+    public void onPageLoad(PageRequestEvent event) {
         final Map<String, String> headers = event.getHeaders();
         if (!headers.containsKey("Connection") || !headers.containsKey("Sec-WebSocket-Key")) {
             return;
@@ -41,17 +55,20 @@ public class WebSocketListener implements PageRequestEvent {
             return;
         }
 
+        String sha1;
         String websocketkey = headers.get("sec-websocket-key");
-        MessageDigest cript = null;
         try {
-            MessageDigest digest = MessageDigest.getInstance("SHA-1");
-            digest.update((websocketkey + websocketGUID).getBytes("utf-8"));
-            byte[] digestBytes = digest.digest();
-            String digestStr = javax.xml.bind.DatatypeConverter.printHexBinary(digestBytes);
+            MessageDigest crypt = MessageDigest.getInstance("SHA-1");
+            crypt.reset();
+            crypt.update((websocketGUID + websocketkey).getBytes("UTF-8"));
+            sha1 = byteToHex(crypt.digest());
+            System.out.println(sha1);
+            //TODO
         } catch (NoSuchAlgorithmException | UnsupportedEncodingException e) {
             e.printStackTrace();
             event.setStatusCode(500);
             event.setHandled(true);
         }
     }
+
 }

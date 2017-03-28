@@ -14,14 +14,21 @@
  *    limitations under the License.
  */
 
-package me.infuzion.web.server;
+package me.infuzion.web.server.event;
 
-import me.infuzion.web.server.event.PageLoadEvent;
+import java.util.List;
 
-public interface PageRequestEvent extends Listener {
-    void onPageLoad(PageLoadEvent event);
+public abstract class Event {
 
-    default Class<? extends Event> getEvent() {
-        return PageLoadEvent.class;
+    public static List<Listener> getAllHandlers() {
+        return HandlerList.getAllListeners();
+    }
+
+    public static void removeAllHandlers() {
+        new HandlerList().reset();
+    }
+
+    public String getName() {
+        return getClass().getSimpleName();
     }
 }
