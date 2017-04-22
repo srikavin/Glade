@@ -19,7 +19,10 @@ package me.infuzion.web.server;
 import com.github.amr.mimetypes.MimeType;
 import com.github.amr.mimetypes.MimeTypes;
 import me.infuzion.web.server.event.EventManager;
-import me.infuzion.web.server.event.PageRequestEvent;
+import me.infuzion.web.server.event.def.PageRequestEvent;
+import me.infuzion.web.server.response.DefaultResponseGenerator;
+import me.infuzion.web.server.util.Cookies;
+import me.infuzion.web.server.util.HTTPMethod;
 import me.infuzion.web.server.util.Utilities;
 
 import java.io.*;
@@ -32,9 +35,9 @@ import java.util.concurrent.TimeUnit;
 
 public class Server implements Runnable {
 
-    private static final double version = 0.1;
+    public static final double version = 0.1;
     private static final MimeTypes mimeTypes = MimeTypes.getInstance();
-    private final Map<UUID, Map<String, String>> session;
+    private final Map<UUID, Map<String, Object>> session;
     private boolean running;
     private boolean initialized;
     private ServerSocket serverSocket;
@@ -57,7 +60,7 @@ public class Server implements Runnable {
         return eventManager;
     }
 
-    public Map<UUID, Map<String, String>> getSession() {
+    public Map<UUID, Map<String, Object>> getSession() {
         return session;
     }
 
@@ -86,15 +89,17 @@ public class Server implements Runnable {
 
     private void onRequest(Socket client) throws IOException {
         BufferedReader reader = new BufferedReader(new InputStreamReader(client.getInputStream()));
-        PrintWriter writer = new PrintWriter(client.getOutputStream());
 
         try {
             int contentLength = -1;
             String page = "";
             String hostName = "";
-            UUID sessionuuid = null;
+            UUID sessionUuid = null;
+            HTTPMethod method = null;
             StringBuilder headers = new StringBuilder();
+            int lineNumber = 0;
             while (true) {
+                lineNumber++;
                 final String line = reader.readLine();
                 if (line == null) {
                     return;
@@ -122,16 +127,23 @@ public class Server implements Runnable {
                                 UUID tempuuid = UUID.fromString(cookie[1]);
                                 session.computeIfAbsent(tempuuid,
                                         id -> session.put(id, new HashMap<>()));
-                                sessionuuid = tempuuid;
+                                sessionUuid = tempuuid;
                             } catch (IllegalArgumentException ignored) {
                             }
                         }
                     }
+                    new Cookies(temp);
                 }
 
-                if (line.startsWith("GET") || line.startsWith("POST")) {
-                    page = line.split(" ")[1];
+                if (lineNumber == 1) {
+                    String[] split = line.split(" ");
+                    method = HTTPMethod.valueOf(split[0].toUpperCase());
+                    page = split[1];
                     continue;
+                }
+
+                if (lineNumber > 1 && method == null) {
+                    return;
                 }
 
                 if (line.length() == 0) {
@@ -148,60 +160,42 @@ public class Server implements Runnable {
             }
 
             boolean setCookie = false;
-            if (sessionuuid == null) {
+            if (sessionUuid == null) {
                 setCookie = true;
-                sessionuuid = UUID.randomUUID();
-                session.put(sessionuuid, new HashMap<>());
+                sessionUuid = UUID.randomUUID();
+                session.put(sessionUuid, new HashMap<>());
             }
 
             PageRequestEvent event = new PageRequestEvent(page, contentString, hostName,
                     headers.toString(),
-                    sessionuuid, session.get(sessionuuid));
+                    sessionUuid, session.get(sessionUuid), method);
 
             if (setCookie) {
-                event.addHeader("Set-Cookie", "session=" + sessionuuid);
+                event.addHeader("Set-Cookie", "session=" + sessionUuid);
             }
 
+            event.setResponseGenerator(new DefaultResponseGenerator());
             eventManager.fireEvent(event);
 
-            MimeType mimeType = mimeTypes.getByExtension(event.getFileEncoding());
-            String contentType = mimeType == null ? event.getFileEncoding() : mimeType.getMimeType();
-            generateResponse(writer, event.getStatusCode(),
-                    contentType,
-                    event.getResponseData(),
-                    event.getAdditionalHeadersToSend());
+            MimeType mimeType = mimeTypes.getByExtension(event.getContentType());
+
+            if (mimeType != null) {
+                event.setContentType(mimeType.getMimeType());
+                System.out.println(mimeType.getMimeType());
+            }
+
+            event.getResponseGenerator().generateResponse(client, event);
             System.out.println(
                     "Request received from: " + client.getInetAddress() + ":" + client.getPort() + " - " +
                             event.getStatusCode() + " " + (System.currentTimeMillis() - lastRequestTime)
                             + "ms " + event.getPage());
-            writer.close();
-            reader.close();
         } catch (Exception e) {
             e.printStackTrace();
-            generateResponse(writer, 500, "text/html",
-                    Utilities.convertStreamToString(getClass().getResourceAsStream("/web/error/500.html")),
-                    new HashMap<>());
+            String response = Utilities.convertStreamToString(getClass().getResourceAsStream("/web/error/500.html"));
+            new BufferedWriter(new OutputStreamWriter(client.getOutputStream()))
+                    .append("HTTP/1.1 500 Server Error\r\n")
+                    .append("Content-Length: " + response.getBytes("UTF-8").length + "\r\n\n")
+                    .append(response);
         }
-    }
-
-    private void generateResponse(PrintWriter writer, int status, String contentType,
-                                  String responseData, Map<String, String> headers)
-            throws UnsupportedEncodingException {
-        writer.println("HTTP/1.1 " + status + "\r");
-        writer.println("Content-Type: " + contentType + "; charset=UTF-8\r");
-        writer.println("Content-Length: " +
-                (responseData != null ?
-                        responseData.getBytes("UTF-8").length : 0
-                ) + "\r");
-        writer.println("X-Powered-By: Java Web Server v" + version + "\r");
-        for (Map.Entry e : headers.entrySet()) {
-            writer.println(e.getKey() + ": " + e.getValue());
-        }
-
-        writer
-                .println("X-Request-Time: " + (System.currentTimeMillis() - lastRequestTime) + "\r\n");
-
-        writer.println(responseData);
-        writer.flush();
     }
 }

@@ -16,24 +16,22 @@
 
 package me.infuzion.web.server.util;
 
-import java.util.*;
+import java.util.ArrayList;
+import java.util.Iterator;
+import java.util.List;
+import java.util.Map;
 
 public class HttpParameters implements Iterable<Map.Entry<String, List<String>>> {
     private final String method;
-    private Map<String, List<String>> parameters = new HashMap<>();
-    private boolean initialized = false;
+    private final Map<String, List<String>> parameters;
 
-    public HttpParameters(String method) {
+    public HttpParameters(String method, Map<String, List<String>> parameters) {
+        this.parameters = parameters;
         this.method = method;
     }
 
-    public void init(Map<String, List<String>> map) {
-        if (initialized) {
-            return;
-        }
-
-        initialized = true;
-        this.parameters = map;
+    public boolean contains(String key) {
+        return parameters.containsKey(key) && get(key).size() > 0;
     }
 
     public Map<String, List<String>> getParameters() {

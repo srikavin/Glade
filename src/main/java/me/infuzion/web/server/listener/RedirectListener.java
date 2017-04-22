@@ -17,10 +17,10 @@
 package me.infuzion.web.server.listener;
 
 import me.infuzion.web.server.EventListener;
-import me.infuzion.web.server.event.EventHandler;
 import me.infuzion.web.server.event.EventManager;
-import me.infuzion.web.server.event.EventPriority;
-import me.infuzion.web.server.event.PageRequestEvent;
+import me.infuzion.web.server.event.def.PageRequestEvent;
+import me.infuzion.web.server.event.reflect.EventHandler;
+import me.infuzion.web.server.event.reflect.EventPriority;
 
 public class RedirectListener implements EventListener {
 
@@ -30,10 +30,10 @@ public class RedirectListener implements EventListener {
 
     @EventHandler(priority = EventPriority.MONITOR)
     public void onPageLoad(PageRequestEvent event) {
-        if (event.getPage().endsWith("/") && !event.isHandled()) {
-            event.setStatusCode(302);
-            event.addHeader("Location", "/index.html");
-            event.setResponseData("");
-        }
+//        if (event.getPage().endsWith("/") && !event.isHandled()) {
+//            event.setStatusCode(302);
+//            event.addHeader("Location", "/index.html");
+//            event.setResponseData("");
+//        }
     }
 }

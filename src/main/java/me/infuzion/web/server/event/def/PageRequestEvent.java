@@ -14,8 +14,10 @@
  *    limitations under the License.
  */
 
-package me.infuzion.web.server.event;
+package me.infuzion.web.server.event.def;
 
+import me.infuzion.web.server.event.Event;
+import me.infuzion.web.server.util.HTTPMethod;
 import me.infuzion.web.server.util.HttpParameters;
 import me.infuzion.web.server.util.Utilities;
 
@@ -28,30 +30,31 @@ public class PageRequestEvent extends Event {
     private final String page;
     private final String rawURL;
     private final String requestData;
-    private final HttpParameters getParameters;
-    private final HttpParameters postParameters;
+    private final HttpParameters urlParameters;
+    private final HttpParameters bodyParameters;
+    private final HTTPMethod method;
     private final Map<String, String> headers;
     private final UUID sessionUuid;
-    private final Map<String, String> session;
+    private final Map<String, Object> session;
     private Map<String, String> additionalHeadersToSend = new HashMap<>();
     private boolean handled = false;
     private String responseData = "";
     private int statusCode;
-    private String fileEncoding = "text/html";
-
+    private String contentType = "text/html";
     public PageRequestEvent(String page, String requestData, String host, String headers,
-                            UUID sessionUuid, Map<String, String> session)
-        throws MalformedURLException, UnsupportedEncodingException {
+                            UUID sessionUuid, Map<String, Object> session, HTTPMethod method)
+            throws MalformedURLException, UnsupportedEncodingException {
         this.requestData = requestData;
-        getParameters = new HttpParameters("GET");
-        postParameters = new HttpParameters("POST");
         this.sessionUuid = sessionUuid;
         this.session = session;
+        this.method = method;
         URL url = new URL("http://" + host + page);
         this.page = url.getPath();
         this.rawURL = page;
-        getParameters.init(Utilities.splitQuery(url));
-        postParameters.init(Utilities.parseQuery(requestData));
+
+        urlParameters = new HttpParameters("GET", Utilities.splitQuery(url));
+        bodyParameters = new HttpParameters("POST", Utilities.parseQuery(requestData));
+
         Map<String, String> temp = new TreeMap<>(String.CASE_INSENSITIVE_ORDER);
         if (headers != null && headers.length() > 0) {
             String[] headerArr = headers.split("\r\n");
@@ -68,16 +71,21 @@ public class PageRequestEvent extends Event {
     public PageRequestEvent(PageRequestEvent e) {
         this.additionalHeadersToSend = e.additionalHeadersToSend;
         this.page = e.page;
-        this.getParameters = e.getParameters;
-        this.postParameters = e.postParameters;
+        this.urlParameters = e.urlParameters;
+        this.bodyParameters = e.bodyParameters;
         this.rawURL = e.rawURL;
         this.headers = e.headers;
         this.sessionUuid = e.sessionUuid;
         this.session = e.session;
         this.handled = e.handled;
         this.responseData = e.responseData;
-        this.fileEncoding = e.fileEncoding;
+        this.contentType = e.contentType;
         this.requestData = e.requestData;
+        this.method = e.method;
+    }
+
+    public HTTPMethod getMethod() {
+        return method;
     }
 
     public String getPage() {
@@ -100,24 +108,24 @@ public class PageRequestEvent extends Event {
         this.statusCode = statusCode;
     }
 
-    public String getFileEncoding() {
-        return fileEncoding;
+    public String getContentType() {
+        return contentType;
     }
 
-    public void setFileEncoding(String fileEncoding) {
-        this.fileEncoding = fileEncoding;
+    public void setContentType(String contentType) {
+        this.contentType = contentType;
     }
 
     public String getRequestData() {
         return requestData;
     }
 
-    public HttpParameters getGetParameters() {
-        return getParameters;
+    public HttpParameters getUrlParameters() {
+        return urlParameters;
     }
 
-    public HttpParameters getPostParameters() {
-        return postParameters;
+    public HttpParameters getBodyParameters() {
+        return bodyParameters;
     }
 
     public String getRawURL() {
@@ -144,7 +152,7 @@ public class PageRequestEvent extends Event {
         return headers;
     }
 
-    public Map<String, String> getSession() {
+    public Map<String, Object> getSession() {
         return session;
     }
 

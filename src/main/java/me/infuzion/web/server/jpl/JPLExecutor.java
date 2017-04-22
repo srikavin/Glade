@@ -17,9 +17,9 @@
 package me.infuzion.web.server.jpl;
 
 import me.infuzion.web.server.EventListener;
-import me.infuzion.web.server.event.EventHandler;
 import me.infuzion.web.server.event.EventManager;
-import me.infuzion.web.server.event.PageRequestEvent;
+import me.infuzion.web.server.event.def.PageRequestEvent;
+import me.infuzion.web.server.event.reflect.EventHandler;
 import me.infuzion.web.server.jpl.data.jpl.JPLArray;
 import me.infuzion.web.server.jpl.data.jpl.JPLString;
 import me.infuzion.web.server.jpl.data.node.Node;
@@ -47,8 +47,8 @@ public class JPLExecutor implements EventListener {
         System.out.println(event.getPage());
         if (event.getPage().endsWith(".jpl") && !event.isHandled()) {
             InputStream stream = getClass().getResourceAsStream("/web/" + event.getPage());
-            if (event.getGetParameters().getParameters().containsKey("noredir")) {
-                event.setFileEncoding("text/text");
+            if (event.getUrlParameters().getParameters().containsKey("noredir")) {
+                event.setContentType("text/text");
                 event.setResponseData(Utilities.convertStreamToString(stream));
                 event.setStatusCode(200);
                 return;
@@ -68,19 +68,19 @@ public class JPLExecutor implements EventListener {
     private String parseVariables(String content, PageRequestEvent event) {
         Map<String, Variable> variableMap = new HashMap<>();
         JPLArray array = new JPLArray();
-        for (Map.Entry<String, List<String>> e : event.getGetParameters().getParameters().entrySet()) {
+        for (Map.Entry<String, List<String>> e : event.getUrlParameters().getParameters().entrySet()) {
             array.set(e.getKey(), new JPLString(e.getValue().get(0)));
         }
         Variable get = new Variable(null, "GET", array, new Node());
         array = new JPLArray();
-        for (Map.Entry<String, List<String>> e : event.getPostParameters().getParameters().entrySet()) {
+        for (Map.Entry<String, List<String>> e : event.getBodyParameters().getParameters().entrySet()) {
             array.set(e.getKey(), new JPLString(e.getValue().get(0)));
         }
         Variable post = new Variable(null, "POST", array, new Node());
 
         array = new JPLArray();
-        for (Map.Entry<String, String> e : event.getSession().entrySet()) {
-            array.set(e.getKey(), new JPLString(e.getValue()));
+        for (Map.Entry<String, Object> e : event.getSession().entrySet()) {
+            array.set(e.getKey(), new JPLString(e.getValue().toString()));
         }
         Variable session = new Variable(null, "SESSION", array, new Node());
 

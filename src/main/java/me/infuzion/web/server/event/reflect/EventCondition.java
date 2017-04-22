@@ -1,4 +1,4 @@
-package me.infuzion.web.server.event;
+package me.infuzion.web.server.event.reflect;
 
 import java.lang.annotation.ElementType;
 import java.lang.annotation.Retention;

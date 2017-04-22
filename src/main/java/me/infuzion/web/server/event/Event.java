@@ -16,19 +16,31 @@
 
 package me.infuzion.web.server.event;
 
-import java.util.List;
+import me.infuzion.web.server.event.reflect.HandlerList;
+import me.infuzion.web.server.response.ResponseGenerator;
 
 public abstract class Event {
 
-    public static List<Listener> getAllHandlers() {
-        return HandlerList.getAllListeners();
-    }
+    private ResponseGenerator responseGenerator;
+    private Object dataObject;
 
-    public static void removeAllHandlers() {
-        new HandlerList().reset();
+    public static HandlerList getHandler() {
+        return HandlerList.getHandlerList();
     }
 
     public String getName() {
         return getClass().getSimpleName();
+    }
+
+    public final ResponseGenerator getResponseGenerator() {
+        return responseGenerator;
+    }
+
+    public final void setResponseGenerator(ResponseGenerator generator) {
+        this.responseGenerator = generator;
+    }
+
+    public Object getDataObject() {
+        return dataObject;
     }
 }

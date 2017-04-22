@@ -1,6 +1,7 @@
-package me.infuzion.web.server.event;
+package me.infuzion.web.server.event.reflect;
 
 import me.infuzion.web.server.EventListener;
+import me.infuzion.web.server.event.Event;
 
 import java.lang.reflect.Method;
 
@@ -10,14 +11,16 @@ public class Listener {
     private final Class<? extends Event> event;
     private final Method listenerMethod;
     private final EventListener eventListener;
+    private final EventControl control;
     private final Method[] conditionMethod;
 
     public Listener(EventPriority priority, Class<? extends Event> event, Method listener,
-                    EventListener eventListener, Method... conditionMethod) {
+                    EventListener eventListener, EventControl control, Method... conditionMethod) {
         this.priority = priority;
         this.event = event;
         this.listenerMethod = listener;
         this.eventListener = eventListener;
+        this.control = control;
         this.conditionMethod = conditionMethod;
     }
 
@@ -39,5 +42,9 @@ public class Listener {
 
     public Method[] getConditionMethod() {
         return conditionMethod;
+    }
+
+    public EventControl getControl() {
+        return control;
     }
 }

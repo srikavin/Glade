@@ -17,8 +17,14 @@
 package me.infuzion.web.server.event;
 
 import me.infuzion.web.server.EventListener;
+import me.infuzion.web.server.event.def.FragmentedWebSocketEvent;
+import me.infuzion.web.server.event.def.PageRequestEvent;
+import me.infuzion.web.server.event.def.WebSocketEvent;
+import me.infuzion.web.server.event.def.WebSocketMessageEvent;
+import me.infuzion.web.server.event.reflect.*;
 import me.infuzion.web.server.listener.RedirectListener;
 import me.infuzion.web.server.listener.StatusListener;
+import me.infuzion.web.server.listener.WebSocketListener;
 
 import java.lang.annotation.Annotation;
 import java.lang.reflect.Method;
@@ -35,26 +41,44 @@ public class EventManager {
         /* ---------------------------------------- */
         new StatusListener(this);
         new RedirectListener(this);
+        new WebSocketListener(this);
 //        new JPLExecutor(this);
     }
 
     private void registerDefaultEventTypes() {
         registerEvent(PageRequestEvent.class);
+        registerEvent(WebSocketEvent.class);
+        registerEvent(FragmentedWebSocketEvent.class);
+        registerEvent(WebSocketMessageEvent.class);
     }
 
     public void fireEvent(Event event) {
         try {
+            for (Listener listener : HandlerList.getAllListeners()) {
+                if (listener.getEvent().equals(event.getClass()) && listener.getControl() == EventControl.FULL) {
+                    if (callListener(event, listener)) {
+                        return;
+                    }
+                }
+            }
+            fireEvent(event, EventPriority.START);
             fireEvent(event, EventPriority.NORMAL);
             fireEvent(event, EventPriority.MONITOR);
+            fireEvent(event, EventPriority.END);
         } catch (Exception e) {
             e.printStackTrace();
         }
     }
 
+    private boolean callListener(Event event, Listener listener) throws Exception {
+        Object o = listener.getListenerMethod().invoke(listener.getEventListener(), event);
+        return o instanceof Boolean && (boolean) o;
+    }
+
     private void fireEvent(Event event, EventPriority priority) throws Exception {
-        for (Listener listener : Event.getAllHandlers()) {
+        for (Listener listener : HandlerList.getAllListeners()) {
             if (listener.getEvent().equals(event.getClass()) && listener.getPriority().equals(priority)) {
-                listener.getListenerMethod().invoke(listener.getEventListener(), event);
+                callListener(event, listener);
             }
         }
     }
@@ -85,6 +109,7 @@ public class EventManager {
                 continue;
             }
             EventPriority priority = ((EventHandler) annotation).priority();
+            EventControl control = ((EventHandler) annotation).control();
             if (method.getParameterCount() != 1) {
                 continue;
             }
@@ -93,9 +118,9 @@ public class EventManager {
 
             if (Event.class.isAssignableFrom(listenerMethodClass)) {
                 eventTypes.stream()
-                        .filter(eventType -> listenerMethodClass.isAssignableFrom(eventType))
-                        .forEach(eventType -> Event.getAllHandlers()
-                                .add(new Listener(priority, eventType, method, listener, eventConditions)));
+                        .filter(listenerMethodClass::isAssignableFrom)
+                        .forEach(eventType -> Event.getHandler()
+                                .addListener(new Listener(priority, eventType, method, listener, control, eventConditions)));
             }
         }
     }

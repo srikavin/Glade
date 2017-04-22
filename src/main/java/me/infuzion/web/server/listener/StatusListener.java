@@ -19,10 +19,10 @@ package me.infuzion.web.server.listener;
 import com.github.amr.mimetypes.MimeType;
 import com.github.amr.mimetypes.MimeTypes;
 import me.infuzion.web.server.EventListener;
-import me.infuzion.web.server.event.EventHandler;
 import me.infuzion.web.server.event.EventManager;
-import me.infuzion.web.server.event.EventPriority;
-import me.infuzion.web.server.event.PageRequestEvent;
+import me.infuzion.web.server.event.def.PageRequestEvent;
+import me.infuzion.web.server.event.reflect.EventHandler;
+import me.infuzion.web.server.event.reflect.EventPriority;
 import me.infuzion.web.server.util.Utilities;
 
 import java.io.InputStream;
@@ -51,7 +51,13 @@ public class StatusListener implements EventListener {
             if (stream != null) {
                 try {
                     if (!Files.isRegularFile(
-                        Paths.get(getClass().getResource("/web/" + event.getPage()).toURI()))) {
+                            Paths.get(getClass().getResource("/web/" + event.getPage()).toURI()))) {
+                        event.setResponseData(Utilities.convertStreamToString(getClass().getResourceAsStream("/web/index.html")));
+                        event.setStatusCode(200);
+                        event.setContentType("html");
+                        event.setHandled(true);
+                        if (true)
+                            return;
                         event.setStatusCode(404);
                         handleStatus(event);
                         return;
@@ -64,19 +70,21 @@ public class StatusListener implements EventListener {
                 event.setStatusCode(200);
                 event.setResponseData(Utilities.convertStreamToString(stream));
                 String contentType = getContentTypeFromFileName(event.getPage());
-                event.setFileEncoding(contentType);
+                event.setContentType(contentType);
                 return;
             }
-            event.setStatusCode(404);
-            handleStatus(event);
+            event.setResponseData(Utilities.convertStreamToString(getClass().getResourceAsStream("/web/index.html")));
+            event.setStatusCode(200);
+            event.setContentType("html");
+            event.setHandled(true);
         }
     }
 
     private void handleStatus(PageRequestEvent event) {
         if (event.getStatusCode() != 200 && event.getStatusCode() != 0
-            && event.getResponseData().length() <= 0) {
+                && event.getResponseData().length() <= 0) {
             InputStream stream = getClass()
-                .getResourceAsStream("/web/error/" + event.getStatusCode() + ".html");
+                    .getResourceAsStream("/web/error/" + event.getStatusCode() + ".html");
             if (stream != null) {
                 event.setResponseData(Utilities.convertStreamToString(stream));
             } else {
