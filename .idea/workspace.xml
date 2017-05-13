@@ -2,28 +2,30 @@
 <project version="4">
   <component name="ChangeListManager">
     <list default="true" id="fef2d7c9-6f42-4640-8a57-d9054204ec3e" name="Default" comment="Better parser&#10;Added while statement">
-      <change type="NEW" beforePath="" afterPath="$PROJECT_DIR$/src/main/java/me/infuzion/web/server/jpl/data/node/TrinaryOperator.java" />
-      <change type="NEW" beforePath="" afterPath="$PROJECT_DIR$/src/main/java/me/infuzion/web/server/jpl/data/node/ForOperator.java" />
-      <change type="NEW" beforePath="" afterPath="$PROJECT_DIR$/src/main/resources/web/favicon.ico" />
-      <change type="MODIFICATION" beforePath="$PROJECT_DIR$/src/main/java/me/infuzion/web/server/jpl/JPLLexer.java" afterPath="$PROJECT_DIR$/src/main/java/me/infuzion/web/server/jpl/JPLLexer.java" />
-      <change type="MODIFICATION" beforePath="$PROJECT_DIR$/Java Web Server.iml" afterPath="$PROJECT_DIR$/Java Web Server.iml" />
-      <change type="MODIFICATION" beforePath="$PROJECT_DIR$/src/main/java/me/infuzion/web/server/jpl/data/NodeVisitor.java" afterPath="$PROJECT_DIR$/src/main/java/me/infuzion/web/server/jpl/data/NodeVisitor.java" />
-      <change type="MODIFICATION" beforePath="$PROJECT_DIR$/pom.xml" afterPath="$PROJECT_DIR$/pom.xml" />
-      <change type="MODIFICATION" beforePath="$PROJECT_DIR$/src/main/java/me/infuzion/web/server/event/PageLoadEvent.java" afterPath="$PROJECT_DIR$/src/main/java/me/infuzion/web/server/event/PageLoadEvent.java" />
-      <change type="MODIFICATION" beforePath="$PROJECT_DIR$/src/main/resources/web/index.jpl" afterPath="$PROJECT_DIR$/src/main/resources/web/index.jpl" />
-      <change type="MODIFICATION" beforePath="$PROJECT_DIR$/src/main/resources/web/include.jpl" afterPath="$PROJECT_DIR$/src/main/resources/web/include.jpl" />
-      <change type="MODIFICATION" beforePath="$PROJECT_DIR$/src/main/java/me/infuzion/web/server/EventManager.java" afterPath="$PROJECT_DIR$/src/main/java/me/infuzion/web/server/EventManager.java" />
-      <change type="MODIFICATION" beforePath="$PROJECT_DIR$/src/main/java/me/infuzion/web/server/jpl/TokenType.java" afterPath="$PROJECT_DIR$/src/main/java/me/infuzion/web/server/jpl/TokenType.java" />
-      <change type="MODIFICATION" beforePath="$PROJECT_DIR$/src/main/java/me/infuzion/web/server/jpl/Parser.java" afterPath="$PROJECT_DIR$/src/main/java/me/infuzion/web/server/jpl/Parser.java" />
-      <change type="MODIFICATION" beforePath="$PROJECT_DIR$/src/main/java/me/infuzion/web/server/jpl/data/ConditionalType.java" afterPath="$PROJECT_DIR$/src/main/java/me/infuzion/web/server/jpl/data/ConditionalType.java" />
-      <change type="MODIFICATION" beforePath="$PROJECT_DIR$/src/main/java/me/infuzion/web/server/jpl/Interpreter.java" afterPath="$PROJECT_DIR$/src/main/java/me/infuzion/web/server/jpl/Interpreter.java" />
-      <change type="MODIFICATION" beforePath="$PROJECT_DIR$/src/main/java/me/infuzion/web/server/listener/StatusListener.java" afterPath="$PROJECT_DIR$/src/main/java/me/infuzion/web/server/listener/StatusListener.java" />
-      <change type="MODIFICATION" beforePath="$PROJECT_DIR$/src/main/java/me/infuzion/web/server/listener/RedirectListener.java" afterPath="$PROJECT_DIR$/src/main/java/me/infuzion/web/server/listener/RedirectListener.java" />
-      <change type="MOVED" beforePath="$PROJECT_DIR$/src/main/java/me/infuzion/web/server/PageLoadListener.java" afterPath="$PROJECT_DIR$/src/main/java/me/infuzion/web/server/PageRequestEvent.java" />
-      <change type="MODIFICATION" beforePath="$PROJECT_DIR$/src/main/java/me/infuzion/web/server/jpl/data/node/ConditionalNode.java" afterPath="$PROJECT_DIR$/src/main/java/me/infuzion/web/server/jpl/data/node/ConditionalNode.java" />
+      <change type="NEW" beforePath="" afterPath="$PROJECT_DIR$/src/main/java/me/infuzion/web/server/event/def/FragmentedWebSocketEvent.java" />
+      <change type="NEW" beforePath="" afterPath="$PROJECT_DIR$/src/main/java/me/infuzion/web/server/event/def/FullWebSocketEvent.java" />
+      <change type="NEW" beforePath="" afterPath="$PROJECT_DIR$/src/main/java/me/infuzion/web/server/event/def/WebSocketEvent.java" />
+      <change type="NEW" beforePath="" afterPath="$PROJECT_DIR$/src/main/java/me/infuzion/web/server/event/reflect/EventPriority.java" />
+      <change type="NEW" beforePath="" afterPath="$PROJECT_DIR$/src/main/java/me/infuzion/web/server/event/reflect/HandlerList.java" />
+      <change type="NEW" beforePath="" afterPath="$PROJECT_DIR$/src/main/java/me/infuzion/web/server/response/DefaultResponseGenerator.java" />
+      <change type="NEW" beforePath="" afterPath="$PROJECT_DIR$/src/main/java/me/infuzion/web/server/response/ResponseGenerator.java" />
+      <change type="NEW" beforePath="" afterPath="$PROJECT_DIR$/src/main/java/me/infuzion/web/server/response/WebSocketResponseGenerator.java" />
+      <change type="NEW" beforePath="" afterPath="$PROJECT_DIR$/src/main/java/me/infuzion/web/server/util/Cookies.java" />
+      <change type="NEW" beforePath="" afterPath="$PROJECT_DIR$/src/main/java/me/infuzion/web/server/util/HTTPMethod.java" />
+      <change type="DELETED" beforePath="$PROJECT_DIR$/src/main/java/me/infuzion/web/server/event/HandlerList.java" afterPath="" />
+      <change type="MOVED" beforePath="$PROJECT_DIR$/src/main/java/me/infuzion/web/server/event/EventCondition.java" afterPath="$PROJECT_DIR$/src/main/java/me/infuzion/web/server/event/reflect/EventCondition.java" />
+      <change type="MOVED" beforePath="$PROJECT_DIR$/src/main/java/me/infuzion/web/server/event/EventHandler.java" afterPath="$PROJECT_DIR$/src/main/java/me/infuzion/web/server/event/reflect/EventHandler.java" />
+      <change type="MOVED" beforePath="$PROJECT_DIR$/src/main/java/me/infuzion/web/server/event/EventManager.java" afterPath="$PROJECT_DIR$/src/main/java/me/infuzion/web/server/event/reflect/EventManager.java" />
+      <change type="MOVED" beforePath="$PROJECT_DIR$/src/main/java/me/infuzion/web/server/event/EventPriority.java" afterPath="$PROJECT_DIR$/src/main/java/me/infuzion/web/server/event/reflect/EventControl.java" />
+      <change type="MOVED" beforePath="$PROJECT_DIR$/src/main/java/me/infuzion/web/server/event/Listener.java" afterPath="$PROJECT_DIR$/src/main/java/me/infuzion/web/server/event/reflect/Listener.java" />
+      <change type="MOVED" beforePath="$PROJECT_DIR$/src/main/java/me/infuzion/web/server/event/PageRequestEvent.java" afterPath="$PROJECT_DIR$/src/main/java/me/infuzion/web/server/event/def/PageRequestEvent.java" />
       <change type="MODIFICATION" beforePath="$PROJECT_DIR$/src/main/java/me/infuzion/web/server/Server.java" afterPath="$PROJECT_DIR$/src/main/java/me/infuzion/web/server/Server.java" />
+      <change type="MODIFICATION" beforePath="$PROJECT_DIR$/src/main/java/me/infuzion/web/server/event/Event.java" afterPath="$PROJECT_DIR$/src/main/java/me/infuzion/web/server/event/Event.java" />
       <change type="MODIFICATION" beforePath="$PROJECT_DIR$/src/main/java/me/infuzion/web/server/jpl/JPLExecutor.java" afterPath="$PROJECT_DIR$/src/main/java/me/infuzion/web/server/jpl/JPLExecutor.java" />
+      <change type="MODIFICATION" beforePath="$PROJECT_DIR$/src/main/java/me/infuzion/web/server/listener/RedirectListener.java" afterPath="$PROJECT_DIR$/src/main/java/me/infuzion/web/server/listener/RedirectListener.java" />
+      <change type="MODIFICATION" beforePath="$PROJECT_DIR$/src/main/java/me/infuzion/web/server/listener/StatusListener.java" afterPath="$PROJECT_DIR$/src/main/java/me/infuzion/web/server/listener/StatusListener.java" />
       <change type="MODIFICATION" beforePath="$PROJECT_DIR$/src/main/java/me/infuzion/web/server/listener/WebSocketListener.java" afterPath="$PROJECT_DIR$/src/main/java/me/infuzion/web/server/listener/WebSocketListener.java" />
+      <change type="MODIFICATION" beforePath="$PROJECT_DIR$/src/main/java/me/infuzion/web/server/util/HttpParameters.java" afterPath="$PROJECT_DIR$/src/main/java/me/infuzion/web/server/util/HttpParameters.java" />
     </list>
     <list id="6b4a700e-c67d-49b5-b93d-a5dff613627e" name="Proper Template Engine" comment="" />
     <ignored path="$PROJECT_DIR$/out/" />
@@ -315,6 +317,9 @@
       <foldersAlwaysOnTop value="true" />
     </navigator>
     <panes>
+      <pane id="Scope" />
+      <pane id="Scratches" />
+      <pane id="PackagesPane" />
       <pane id="ProjectPane">
         <subPane>
           <PATH>
@@ -545,9 +550,6 @@
           </PATH>
         </subPane>
       </pane>
-      <pane id="PackagesPane" />
-      <pane id="Scratches" />
-      <pane id="Scope" />
     </panes>
   </component>
   <component name="PropertiesComponent">
@@ -925,11 +927,11 @@
       <method />
     </configuration>
     <list size="5">
-      <item index="0" class="java.lang.String" itemvalue="Application.Main" />
-      <item index="1" class="java.lang.String" itemvalue="Application.Parser" />
-      <item index="2" class="java.lang.String" itemvalue="JUnit.UtilitiesTest.convertStreamToString" />
-      <item index="3" class="java.lang.String" itemvalue="JUnit.UtilitiesTest" />
-      <item index="4" class="java.lang.String" itemvalue="Maven.Maven" />
+      <item index="0" class="java.lang.String" itemvalue="JUnit.UtilitiesTest" />
+      <item index="1" class="java.lang.String" itemvalue="Maven.Maven" />
+      <item index="2" class="java.lang.String" itemvalue="Application.Main" />
+      <item index="3" class="java.lang.String" itemvalue="Application.Parser" />
+      <item index="4" class="java.lang.String" itemvalue="JUnit.UtilitiesTest.convertStreamToString" />
     </list>
     <recent_temporary>
       <list size="3">
@@ -995,6 +997,7 @@
       <workItem from="1487175961203" duration="2022000" />
       <workItem from="1487561568533" duration="488000" />
       <workItem from="1487891924811" duration="2019000" />
+      <workItem from="1491691866024" duration="11000" />
     </task>
     <task id="LOCAL-00001" summary="Working template engine">
       <created>1482017785881</created>
@@ -1092,7 +1095,7 @@
     </history-entry>
   </component>
   <component name="TimeTrackingManager">
-    <option name="totallyTimeSpent" value="214738000" />
+    <option name="totallyTimeSpent" value="214749000" />
   </component>
   <component name="TodoView">
     <todo-panel id="selected-file">
@@ -1105,39 +1108,38 @@
   </component>
   <component name="ToolWindowManager">
     <frame x="-8" y="-8" width="1382" height="754" extended-state="6" />
-    <editor active="false" />
     <layout>
-      <window_info id="Designer" active="false" anchor="left" auto_hide="false" internal_type="DOCKED" type="DOCKED" visible="false" show_stripe_button="true" weight="0.33" sideWeight="0.5" order="2" side_tool="false" content_ui="tabs" />
       <window_info id="Palette" active="false" anchor="right" auto_hide="false" internal_type="DOCKED" type="DOCKED" visible="false" show_stripe_button="true" weight="0.33" sideWeight="0.5" order="2" side_tool="false" content_ui="tabs" />
+      <window_info id="TODO" active="false" anchor="bottom" auto_hide="false" internal_type="DOCKED" type="DOCKED" visible="false" show_stripe_button="true" weight="0.32850242" sideWeight="0.5" order="6" side_tool="false" content_ui="tabs" />
       <window_info id="Palette&#9;" active="false" anchor="right" auto_hide="false" internal_type="DOCKED" type="DOCKED" visible="false" show_stripe_button="true" weight="0.33" sideWeight="0.5" order="4" side_tool="false" content_ui="tabs" />
-      <window_info id="PsiViewer" active="false" anchor="right" auto_hide="false" internal_type="DOCKED" type="DOCKED" visible="false" show_stripe_button="true" weight="0.32980332" sideWeight="0.5" order="8" side_tool="false" content_ui="tabs" />
-      <window_info id="UI Designer" active="false" anchor="left" auto_hide="false" internal_type="DOCKED" type="DOCKED" visible="false" show_stripe_button="true" weight="0.33" sideWeight="0.5" order="4" side_tool="false" content_ui="tabs" />
-      <window_info id="Cvs" active="false" anchor="bottom" auto_hide="false" internal_type="DOCKED" type="DOCKED" visible="false" show_stripe_button="true" weight="0.25" sideWeight="0.5" order="3" side_tool="false" content_ui="tabs" />
-      <window_info id="Message" active="false" anchor="bottom" auto_hide="false" internal_type="DOCKED" type="DOCKED" visible="false" show_stripe_button="true" weight="0.33" sideWeight="0.5" order="0" side_tool="false" content_ui="tabs" />
-      <window_info id="Commander" active="false" anchor="right" auto_hide="false" internal_type="DOCKED" type="DOCKED" visible="false" show_stripe_button="true" weight="0.4" sideWeight="0.5" order="0" side_tool="false" content_ui="tabs" />
       <window_info id="Event Log" active="false" anchor="bottom" auto_hide="false" internal_type="DOCKED" type="DOCKED" visible="false" show_stripe_button="true" weight="0.36070853" sideWeight="0.5136157" order="10" side_tool="true" content_ui="tabs" />
+      <window_info id="PsiViewer" active="false" anchor="right" auto_hide="false" internal_type="DOCKED" type="DOCKED" visible="false" show_stripe_button="true" weight="0.32980332" sideWeight="0.5" order="8" side_tool="false" content_ui="tabs" />
       <window_info id="Maven Projects" active="false" anchor="right" auto_hide="false" internal_type="DOCKED" type="DOCKED" visible="false" show_stripe_button="true" weight="0.33" sideWeight="0.5" order="3" side_tool="false" content_ui="tabs" />
-      <window_info id="Hierarchy" active="false" anchor="right" auto_hide="false" internal_type="DOCKED" type="DOCKED" visible="false" show_stripe_button="true" weight="0.24962178" sideWeight="0.5" order="1" side_tool="false" content_ui="combo" />
-      <window_info id="Memory View" active="false" anchor="right" auto_hide="false" internal_type="DOCKED" type="DOCKED" visible="false" show_stripe_button="true" weight="0.33" sideWeight="0.5" order="5" side_tool="false" content_ui="tabs" />
+      <window_info id="Version Control" active="false" anchor="bottom" auto_hide="false" internal_type="DOCKED" type="DOCKED" visible="false" show_stripe_button="true" weight="0.3268921" sideWeight="0.5" order="8" side_tool="false" content_ui="tabs" />
+      <window_info id="Run" active="false" anchor="bottom" auto_hide="false" internal_type="DOCKED" type="DOCKED" visible="false" show_stripe_button="true" weight="0.36024845" sideWeight="0.48638427" order="2" side_tool="false" content_ui="tabs" />
+      <window_info id="CheckStyle" active="false" anchor="bottom" auto_hide="false" internal_type="DOCKED" type="DOCKED" visible="false" show_stripe_button="true" weight="0.33" sideWeight="0.5" order="12" side_tool="false" content_ui="tabs" />
+      <window_info id="Terminal" active="false" anchor="bottom" auto_hide="false" internal_type="DOCKED" type="DOCKED" visible="false" show_stripe_button="true" weight="0.5877617" sideWeight="0.5" order="9" side_tool="false" content_ui="tabs" />
+      <window_info id="Designer" active="false" anchor="left" auto_hide="false" internal_type="DOCKED" type="DOCKED" visible="false" show_stripe_button="true" weight="0.33" sideWeight="0.5" order="2" side_tool="false" content_ui="tabs" />
+      <window_info id="Project" active="true" anchor="left" auto_hide="false" internal_type="DOCKED" type="DOCKED" visible="true" show_stripe_button="true" weight="0.27306002" sideWeight="0.48138958" order="0" side_tool="false" content_ui="combo" />
+      <window_info id="Run with VisualVM" active="false" anchor="bottom" auto_hide="false" internal_type="DOCKED" type="DOCKED" visible="false" show_stripe_button="true" weight="0.33" sideWeight="0.5" order="11" side_tool="false" content_ui="tabs" />
       <window_info id="Database" active="false" anchor="right" auto_hide="false" internal_type="DOCKED" type="DOCKED" visible="false" show_stripe_button="true" weight="0.33" sideWeight="0.5" order="7" side_tool="false" content_ui="tabs" />
       <window_info id="Structure" active="false" anchor="left" auto_hide="false" internal_type="DOCKED" type="DOCKED" visible="false" show_stripe_button="true" weight="0.24962178" sideWeight="0.5" order="1" side_tool="false" content_ui="tabs" />
       <window_info id="Ant Build" active="false" anchor="right" auto_hide="false" internal_type="DOCKED" type="DOCKED" visible="false" show_stripe_button="true" weight="0.25" sideWeight="0.5" order="6" side_tool="false" content_ui="tabs" />
+      <window_info id="UI Designer" active="false" anchor="left" auto_hide="false" internal_type="DOCKED" type="DOCKED" visible="false" show_stripe_button="true" weight="0.33" sideWeight="0.5" order="4" side_tool="false" content_ui="tabs" />
+      <window_info id="Favorites" active="false" anchor="left" auto_hide="false" internal_type="DOCKED" type="DOCKED" visible="false" show_stripe_button="true" weight="0.27987897" sideWeight="0.5186104" order="3" side_tool="true" content_ui="tabs" />
       <window_info id="Debug" active="false" anchor="bottom" auto_hide="false" internal_type="DOCKED" type="DOCKED" visible="false" show_stripe_button="true" weight="0.35559008" sideWeight="0.4969743" order="5" side_tool="false" content_ui="tabs" />
-      <window_info id="TODO" active="false" anchor="bottom" auto_hide="false" internal_type="DOCKED" type="DOCKED" visible="false" show_stripe_button="true" weight="0.32850242" sideWeight="0.5" order="6" side_tool="false" content_ui="tabs" />
+      <window_info id="Debug with VisualVM" active="false" anchor="bottom" auto_hide="false" internal_type="DOCKED" type="DOCKED" visible="false" show_stripe_button="true" weight="0.33" sideWeight="0.5" order="11" side_tool="false" content_ui="tabs" />
+      <window_info id="Cvs" active="false" anchor="bottom" auto_hide="false" internal_type="DOCKED" type="DOCKED" visible="false" show_stripe_button="true" weight="0.25" sideWeight="0.5" order="3" side_tool="false" content_ui="tabs" />
+      <window_info id="Message" active="false" anchor="bottom" auto_hide="false" internal_type="DOCKED" type="DOCKED" visible="false" show_stripe_button="true" weight="0.33" sideWeight="0.5" order="0" side_tool="false" content_ui="tabs" />
+      <window_info id="Commander" active="false" anchor="right" auto_hide="false" internal_type="DOCKED" type="DOCKED" visible="false" show_stripe_button="true" weight="0.4" sideWeight="0.5" order="0" side_tool="false" content_ui="tabs" />
+      <window_info id="Hierarchy" active="false" anchor="right" auto_hide="false" internal_type="DOCKED" type="DOCKED" visible="false" show_stripe_button="true" weight="0.24962178" sideWeight="0.5" order="1" side_tool="false" content_ui="combo" />
+      <window_info id="Memory View" active="false" anchor="right" auto_hide="false" internal_type="DOCKED" type="DOCKED" visible="false" show_stripe_button="true" weight="0.33" sideWeight="0.5" order="5" side_tool="false" content_ui="tabs" />
       <window_info id="Messages" active="false" anchor="bottom" auto_hide="false" internal_type="DOCKED" type="DOCKED" visible="false" show_stripe_button="true" weight="0.32850242" sideWeight="0.5" order="7" side_tool="false" content_ui="tabs" />
       <window_info id="Run Dashboard" active="false" anchor="bottom" auto_hide="false" internal_type="DOCKED" type="DOCKED" visible="false" show_stripe_button="true" weight="0.33" sideWeight="0.5" order="11" side_tool="false" content_ui="tabs" />
       <window_info id="Documentation" active="false" anchor="right" auto_hide="false" internal_type="DOCKED" type="FLOATING" visible="false" show_stripe_button="true" weight="0.33" sideWeight="0.5" order="5" side_tool="false" content_ui="tabs" x="92" y="92" width="1182" height="554" />
       <window_info id="Inspection" active="false" anchor="bottom" auto_hide="false" internal_type="DOCKED" type="DOCKED" visible="false" show_stripe_button="true" weight="0.4" sideWeight="0.5" order="4" side_tool="false" content_ui="tabs" />
-      <window_info id="Run" active="false" anchor="bottom" auto_hide="false" internal_type="DOCKED" type="DOCKED" visible="false" show_stripe_button="true" weight="0.36024845" sideWeight="0.48638427" order="2" side_tool="false" content_ui="tabs" />
-      <window_info id="Version Control" active="false" anchor="bottom" auto_hide="false" internal_type="DOCKED" type="DOCKED" visible="false" show_stripe_button="true" weight="0.3268921" sideWeight="0.5" order="8" side_tool="false" content_ui="tabs" />
       <window_info id="Coverage" active="false" anchor="right" auto_hide="false" internal_type="DOCKED" type="DOCKED" visible="false" show_stripe_button="true" weight="0.32980332" sideWeight="0.5" order="9" side_tool="true" content_ui="tabs" />
-      <window_info id="CheckStyle" active="false" anchor="bottom" auto_hide="false" internal_type="DOCKED" type="DOCKED" visible="false" show_stripe_button="true" weight="0.33" sideWeight="0.5" order="12" side_tool="false" content_ui="tabs" />
-      <window_info id="Terminal" active="false" anchor="bottom" auto_hide="false" internal_type="DOCKED" type="DOCKED" visible="false" show_stripe_button="true" weight="0.5877617" sideWeight="0.5" order="9" side_tool="false" content_ui="tabs" />
-      <window_info id="Project" active="false" anchor="left" auto_hide="false" internal_type="DOCKED" type="DOCKED" visible="true" show_stripe_button="true" weight="0.27306002" sideWeight="0.48138958" order="0" side_tool="false" content_ui="combo" />
-      <window_info id="Run with VisualVM" active="false" anchor="bottom" auto_hide="false" internal_type="DOCKED" type="DOCKED" visible="false" show_stripe_button="true" weight="0.33" sideWeight="0.5" order="11" side_tool="false" content_ui="tabs" />
       <window_info id="Find" active="false" anchor="bottom" auto_hide="false" internal_type="DOCKED" type="DOCKED" visible="false" show_stripe_button="true" weight="0.32763976" sideWeight="0.5" order="1" side_tool="false" content_ui="tabs" />
-      <window_info id="Favorites" active="false" anchor="left" auto_hide="false" internal_type="DOCKED" type="DOCKED" visible="false" show_stripe_button="true" weight="0.27987897" sideWeight="0.5186104" order="3" side_tool="true" content_ui="tabs" />
-      <window_info id="Debug with VisualVM" active="false" anchor="bottom" auto_hide="false" internal_type="DOCKED" type="DOCKED" visible="false" show_stripe_button="true" weight="0.33" sideWeight="0.5" order="11" side_tool="false" content_ui="tabs" />
     </layout>
   </component>
   <component name="TypeScriptGeneratedFilesManager">
