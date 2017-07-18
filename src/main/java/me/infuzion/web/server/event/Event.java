@@ -18,11 +18,12 @@ package me.infuzion.web.server.event;
 
 import me.infuzion.web.server.event.reflect.HandlerList;
 import me.infuzion.web.server.response.ResponseGenerator;
+import me.infuzion.web.server.router.Router;
 
 public abstract class Event {
+    private long creationTime = System.currentTimeMillis();
 
     private ResponseGenerator responseGenerator;
-    private Object dataObject;
 
     public static HandlerList getHandler() {
         return HandlerList.getHandlerList();
@@ -40,7 +41,9 @@ public abstract class Event {
         this.responseGenerator = generator;
     }
 
-    public Object getDataObject() {
-        return dataObject;
+    public abstract Router getRouter();
+
+    public long getStartTime() {
+        return creationTime;
     }
 }

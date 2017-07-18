@@ -28,9 +28,12 @@ import me.infuzion.web.server.util.Utilities;
 import java.io.*;
 import java.net.ServerSocket;
 import java.net.Socket;
+import java.nio.charset.StandardCharsets;
 import java.util.HashMap;
 import java.util.Map;
 import java.util.UUID;
+import java.util.concurrent.ExecutorService;
+import java.util.concurrent.Executors;
 import java.util.concurrent.TimeUnit;
 
 public class Server implements Runnable {
@@ -38,6 +41,7 @@ public class Server implements Runnable {
     public static final double version = 0.1;
     private static final MimeTypes mimeTypes = MimeTypes.getInstance();
     private final Map<UUID, Map<String, Object>> session;
+    private final ExecutorService executor = Executors.newCachedThreadPool();
     private boolean running;
     private boolean initialized;
     private ServerSocket serverSocket;
@@ -74,13 +78,13 @@ public class Server implements Runnable {
                 }
                 Socket client = serverSocket.accept();
                 lastRequestTime = System.currentTimeMillis();
-                new Thread(() -> {
+                executor.submit(() -> {
                     try {
                         onRequest(client);
                     } catch (IOException e) {
                         e.printStackTrace();
                     }
-                }).start();
+                });
             } catch (Exception e) {
                 e.printStackTrace();
             }
@@ -88,7 +92,26 @@ public class Server implements Runnable {
     }
 
     private void onRequest(Socket client) throws IOException {
-        BufferedReader reader = new BufferedReader(new InputStreamReader(client.getInputStream()));
+        InputStream in = client.getInputStream();
+//        BufferedInputStream in = new BufferedInputStream(client.getInputStream());
+        ByteArrayOutputStream out = new ByteArrayOutputStream();
+        int amountRead;
+        byte[] bytes;
+
+        do {
+            bytes = new byte[1024];
+            amountRead = in.read(bytes);
+            out.write(bytes);
+        } while (amountRead > 0 && in.available() > 0);
+
+        byte[] rawBytes = out.toByteArray();
+        String rawStr = new String(rawBytes);
+        int contStart = rawStr.indexOf("\r\n\r\n");
+        if (contStart != -1) {
+            contStart += 4;
+        }
+
+        BufferedReader reader = new BufferedReader(new StringReader(rawStr));
 
         try {
             int contentLength = -1;
@@ -150,13 +173,11 @@ public class Server implements Runnable {
                     break;
                 }
             }
-            String contentString = null;
-            if (contentLength != -1 && contentLength >= 0) {
-                final char[] content = new char[contentLength];
-                if (reader.read(content) == -1) {
-                    return;
-                }
-                contentString = new String(content);
+
+            byte[] raw = null;
+            if (contentLength > 0) {
+                raw = new byte[contentLength];
+                System.arraycopy(rawBytes, contStart, raw, 0, contentLength);
             }
 
             boolean setCookie = false;
@@ -166,13 +187,16 @@ public class Server implements Runnable {
                 session.put(sessionUuid, new HashMap<>());
             }
 
+            String contentString = raw != null ? new String(raw, StandardCharsets.ISO_8859_1) : "";
+
             PageRequestEvent event = new PageRequestEvent(page, contentString, hostName,
                     headers.toString(),
-                    sessionUuid, session.get(sessionUuid), method);
+                    sessionUuid, session.get(sessionUuid), method, raw);
 
             if (setCookie) {
                 event.addHeader("Set-Cookie", "session=" + sessionUuid);
             }
+//            Thread.currentThread().setName("Request for: " + event.getPage());
 
             event.setResponseGenerator(new DefaultResponseGenerator());
             eventManager.fireEvent(event);
@@ -181,7 +205,6 @@ public class Server implements Runnable {
 
             if (mimeType != null) {
                 event.setContentType(mimeType.getMimeType());
-                System.out.println(mimeType.getMimeType());
             }
 
             event.getResponseGenerator().generateResponse(client, event);
@@ -191,11 +214,13 @@ public class Server implements Runnable {
                             + "ms " + event.getPage());
         } catch (Exception e) {
             e.printStackTrace();
+
             String response = Utilities.convertStreamToString(getClass().getResourceAsStream("/web/error/500.html"));
-            new BufferedWriter(new OutputStreamWriter(client.getOutputStream()))
-                    .append("HTTP/1.1 500 Server Error\r\n")
+            BufferedWriter writer = new BufferedWriter(new OutputStreamWriter(client.getOutputStream()));
+            writer.append("HTTP/1.1 500 Server Error\r\n")
                     .append("Content-Length: " + response.getBytes("UTF-8").length + "\r\n\n")
                     .append(response);
+            writer.close();
         }
     }
 }

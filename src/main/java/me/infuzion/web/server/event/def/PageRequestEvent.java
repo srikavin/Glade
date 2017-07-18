@@ -17,6 +17,8 @@
 package me.infuzion.web.server.event.def;
 
 import me.infuzion.web.server.event.Event;
+import me.infuzion.web.server.router.Router;
+import me.infuzion.web.server.router.def.DefaultRouter;
 import me.infuzion.web.server.util.HTTPMethod;
 import me.infuzion.web.server.util.HttpParameters;
 import me.infuzion.web.server.util.Utilities;
@@ -24,11 +26,12 @@ import me.infuzion.web.server.util.Utilities;
 import java.io.UnsupportedEncodingException;
 import java.net.MalformedURLException;
 import java.net.URL;
+import java.nio.charset.StandardCharsets;
 import java.util.*;
 
 public class PageRequestEvent extends Event {
+    private final DefaultRouter router;
     private final String page;
-    private final String rawURL;
     private final String requestData;
     private final HttpParameters urlParameters;
     private final HttpParameters bodyParameters;
@@ -37,12 +40,14 @@ public class PageRequestEvent extends Event {
     private final UUID sessionUuid;
     private final Map<String, Object> session;
     private Map<String, String> additionalHeadersToSend = new HashMap<>();
+    private Map<String, byte[]> rawMultipartFormData;
     private boolean handled = false;
-    private String responseData = "";
     private int statusCode;
     private String contentType = "text/html";
+    private byte[] bytes;
+
     public PageRequestEvent(String page, String requestData, String host, String headers,
-                            UUID sessionUuid, Map<String, Object> session, HTTPMethod method)
+                            UUID sessionUuid, Map<String, Object> session, HTTPMethod method, byte[] raw)
             throws MalformedURLException, UnsupportedEncodingException {
         this.requestData = requestData;
         this.sessionUuid = sessionUuid;
@@ -50,38 +55,88 @@ public class PageRequestEvent extends Event {
         this.method = method;
         URL url = new URL("http://" + host + page);
         this.page = url.getPath();
-        this.rawURL = page;
 
-        urlParameters = new HttpParameters("GET", Utilities.splitQuery(url));
-        bodyParameters = new HttpParameters("POST", Utilities.parseQuery(requestData));
-
-        Map<String, String> temp = new TreeMap<>(String.CASE_INSENSITIVE_ORDER);
+        Map<String, String> tempHeaders = new TreeMap<>(String.CASE_INSENSITIVE_ORDER);
         if (headers != null && headers.length() > 0) {
             String[] headerArr = headers.split("\r\n");
             for (String e : headerArr) {
                 String[] keyValue = e.split(":", 2);
                 if (keyValue.length == 2) {
-                    temp.put(keyValue[0].trim(), keyValue[1].trim());
+                    tempHeaders.put(keyValue[0].trim(), keyValue[1].trim());
                 }
             }
         }
-        this.headers = Collections.unmodifiableMap(temp);
+        this.headers = Collections.unmodifiableMap(tempHeaders);
+
+        urlParameters = new HttpParameters("GET", Utilities.splitQuery(url));
+
+        Map<String, byte[]> bodyData = getMultipartFormData(this.headers, method, raw);
+        rawMultipartFormData = bodyData != null ?
+                Collections.unmodifiableMap(bodyData) : Collections.unmodifiableMap(new HashMap<>());
+
+        Map<String, List<String>> postParams;
+        if (bodyData != null) {
+            postParams = new HashMap<>();
+            for (Map.Entry<String, byte[]> e : bodyData.entrySet()) {
+                postParams.put(e.getKey(), Collections.singletonList(new String(e.getValue())));
+            }
+        } else {
+            postParams = Utilities.parseQuery(requestData);
+        }
+
+        bodyParameters = new HttpParameters("POST", postParams);
+        router = new DefaultRouter(page, method);
     }
 
-    public PageRequestEvent(PageRequestEvent e) {
-        this.additionalHeadersToSend = e.additionalHeadersToSend;
-        this.page = e.page;
-        this.urlParameters = e.urlParameters;
-        this.bodyParameters = e.bodyParameters;
-        this.rawURL = e.rawURL;
-        this.headers = e.headers;
-        this.sessionUuid = e.sessionUuid;
-        this.session = e.session;
-        this.handled = e.handled;
-        this.responseData = e.responseData;
-        this.contentType = e.contentType;
-        this.requestData = e.requestData;
-        this.method = e.method;
+    private static Map<String, byte[]> getMultipartFormData(Map<String, String> headers, HTTPMethod method, byte[] byteData) {
+        if (!(method == HTTPMethod.POST)) {
+            return null;
+        }
+        if (!headers.get("Content-Type").contains("multipart/form-data;")) {
+            return null;
+        }
+        String boundary = null;
+        for (String e : headers.get("Content-Type").split(";")) {
+            if (e.trim().startsWith("boundary=")) {
+                boundary = "--" + e.trim().substring(9);
+            }
+        }
+        if (boundary == null) {
+            return null;
+        }
+
+        String reqData = new String(byteData, StandardCharsets.ISO_8859_1);
+
+        Map<String, byte[]> formData = new HashMap<>();
+        String[] segments = reqData.split(boundary);
+        for (String e : segments) {
+            int index = e.indexOf("name=\"");
+            if (index != -1) {
+                index += 7;
+                char[] arr = e.toCharArray();
+                int endIndex = -1;
+                for (int i = index; i < arr.length; i++) {
+                    if (arr[i] == '"') {
+                        endIndex = i + 1;
+                        break;
+                    }
+                }
+
+                if (endIndex != -1) {
+                    char[] nameBytes = new char[endIndex - index];
+                    System.arraycopy(arr, index - 1, nameBytes, 0, nameBytes.length);
+                    String name = new String(nameBytes);
+                    String[] split = e.substring(0, e.length() - 2).split("\r\n\r\n", 2);
+                    formData.putIfAbsent(name, split[1].getBytes(StandardCharsets.ISO_8859_1));
+                }
+            }
+        }
+
+        return formData;
+    }
+
+    public byte[] getResponseDataRaw() {
+        return bytes;
     }
 
     public HTTPMethod getMethod() {
@@ -93,11 +148,17 @@ public class PageRequestEvent extends Event {
     }
 
     public String getResponseData() {
-        return responseData;
+        return new String(bytes);
     }
 
     public void setResponseData(String responseData) {
-        this.responseData = responseData;
+        bytes = responseData.getBytes();
+        this.setHandled(true);
+    }
+
+    public void setResponseData(byte[] bytes) {
+        this.bytes = bytes;
+        this.setHandled(true);
     }
 
     public int getStatusCode() {
@@ -128,10 +189,6 @@ public class PageRequestEvent extends Event {
         return bodyParameters;
     }
 
-    public String getRawURL() {
-        return rawURL;
-    }
-
     public Map<String, String> getAdditionalHeadersToSend() {
         return additionalHeadersToSend;
     }
@@ -158,5 +215,14 @@ public class PageRequestEvent extends Event {
 
     public UUID getSessionUuid() {
         return sessionUuid;
+    }
+
+    public Map<String, byte[]> getRawMultipartFormData() {
+        return rawMultipartFormData;
+    }
+
+    @Override
+    public Router getRouter() {
+        return router;
     }
 }

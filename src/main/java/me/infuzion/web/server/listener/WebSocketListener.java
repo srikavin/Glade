@@ -52,7 +52,15 @@ public class WebSocketListener implements EventListener {
         if (!headers.containsKey("Connection") || !headers.containsKey("Upgrade") || !headers.containsKey("Sec-WebSocket-Key")) {
             return false;
         }
-        if (!headers.get("Connection").equalsIgnoreCase("upgrade")) {
+        String[] split = headers.get("Connection").split(",");
+        boolean found = false;
+        for (String e : split) {
+            if (e.trim().equalsIgnoreCase("upgrade")) {
+                found = true;
+                break;
+            }
+        }
+        if (!found) {
             return false;
         }
         if (!headers.get("Upgrade").equalsIgnoreCase("websocket")) {
@@ -60,13 +68,15 @@ public class WebSocketListener implements EventListener {
         }
         String webSocketKey = headers.get("sec-websocket-key");
         try {
-            String base64 = DatatypeConverter.printBase64Binary(
-                    MessageDigest.getInstance("SHA-1")
-                            .digest((webSocketKey + websocketGUID)
-                                    .getBytes("UTF-8")));
-            event.addHeader("Sec-WebSocket-Accept", base64);
+            event.addHeader("Sec-WebSocket-Accept", generateWebSocketAccept(webSocketKey));
             event.addHeader("Sec-WebSocket-Version", "13");
-            urlResponseGeneratorMap.computeIfAbsent(event.getPage(), (url) -> new WebSocketResponseGenerator(manager));
+            urlResponseGeneratorMap.computeIfAbsent(event.getPage(), (url) -> {
+                WebSocketResponseGenerator responseGenerator = new WebSocketResponseGenerator(manager);
+                Thread thread = new Thread(responseGenerator);
+                thread.setName("Websocket listener for " + event.getPage());
+                thread.start();
+                return responseGenerator;
+            });
             event.setResponseGenerator(urlResponseGeneratorMap.get(event.getPage()));
         } catch (NoSuchAlgorithmException | UnsupportedEncodingException e) {
             e.printStackTrace();
@@ -75,5 +85,13 @@ public class WebSocketListener implements EventListener {
             return false;
         }
         return true;
+    }
+
+    public String generateWebSocketAccept(String secKey) throws NoSuchAlgorithmException, UnsupportedEncodingException {
+        return DatatypeConverter.printBase64Binary(
+                MessageDigest.getInstance("SHA-1")
+                        .digest((secKey + websocketGUID)
+                                .getBytes("UTF-8")));
+
     }
 }

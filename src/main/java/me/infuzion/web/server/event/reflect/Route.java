@@ -1,5 +1,7 @@
 package me.infuzion.web.server.event.reflect;
 
+import me.infuzion.web.server.router.RouteMethod;
+
 import java.lang.annotation.ElementType;
 import java.lang.annotation.Retention;
 import java.lang.annotation.RetentionPolicy;
@@ -7,6 +9,9 @@ import java.lang.annotation.Target;
 
 @Target(ElementType.METHOD)
 @Retention(RetentionPolicy.RUNTIME)
-public @interface EventCondition {
-    String eventMethod();
+public @interface Route {
+    String path();
+
+    RouteMethod[] methods() default {RouteMethod.GET};
+
 }

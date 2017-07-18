@@ -5,5 +5,6 @@ public enum HTTPMethod {
     POST,
     PUT,
     PATCH,
-    DELETE
+    DELETE,
+    OPTIONS
 }

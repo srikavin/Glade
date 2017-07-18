@@ -1,6 +1,7 @@
 package me.infuzion.web.server.event.def;
 
 import me.infuzion.web.server.event.Event;
+import me.infuzion.web.server.router.Router;
 
 import java.util.*;
 
@@ -10,18 +11,20 @@ public abstract class WebSocketEvent extends Event {
     private final byte payloadOpCode;
     private final boolean finished;
     private final String page;
+    private final PageRequestEvent event;
 
     private final List<String> toSendToAll;
     private final Map<UUID, String> toSend;
 
     private byte responseOpCode;
 
-    WebSocketEvent(UUID sessionUUID, String payload, byte payloadOpCode, boolean finished, String page) {
+    WebSocketEvent(UUID sessionUUID, String payload, byte payloadOpCode, boolean finished, PageRequestEvent event) {
         this.sessionUUID = sessionUUID;
         this.payload = payload;
         this.payloadOpCode = payloadOpCode;
         this.finished = finished;
-        this.page = page;
+        this.page = event.getPage();
+        this.event = event;
 
         responseOpCode = 0x1;
         toSendToAll = new ArrayList<>();
@@ -74,5 +77,10 @@ public abstract class WebSocketEvent extends Event {
 
     public String getPage() {
         return page;
+    }
+
+    @Override
+    public Router getRouter() {
+        return event.getRouter();
     }
 }

@@ -25,10 +25,13 @@ import me.infuzion.web.server.event.reflect.EventHandler;
 import me.infuzion.web.server.event.reflect.EventPriority;
 import me.infuzion.web.server.util.Utilities;
 
+import java.io.EOFException;
+import java.io.IOException;
 import java.io.InputStream;
 import java.net.URISyntaxException;
 import java.nio.file.Files;
 import java.nio.file.Paths;
+import java.util.Arrays;
 
 public class StatusListener implements EventListener {
 
@@ -38,6 +41,37 @@ public class StatusListener implements EventListener {
         mimeTypesInstance = MimeTypes.getInstance();
         mimeTypesInstance.register(new MimeType("text/html", "jpl"));
         eventManager.registerListener(this);
+    }
+
+    public static byte[] readFully(InputStream is, int length, boolean readAll)
+            throws IOException {
+        byte[] output = {};
+        if (length == -1) length = Integer.MAX_VALUE;
+        int pos = 0;
+        while (pos < length) {
+            int bytesToRead;
+            if (pos >= output.length) { // Only expand when there's no room
+                bytesToRead = Math.min(length - pos, output.length + 1024);
+                if (output.length < pos + bytesToRead) {
+                    output = Arrays.copyOf(output, pos + bytesToRead);
+                }
+            } else {
+                bytesToRead = output.length - pos;
+            }
+            int cc = is.read(output, pos, bytesToRead);
+            if (cc < 0) {
+                if (readAll && length != Integer.MAX_VALUE) {
+                    throw new EOFException("Detect premature EOF");
+                } else {
+                    if (output.length != pos) {
+                        output = Arrays.copyOf(output, pos);
+                    }
+                    break;
+                }
+            }
+            pos += cc;
+        }
+        return output;
     }
 
     @EventHandler(priority = EventPriority.MONITOR)
@@ -56,10 +90,6 @@ public class StatusListener implements EventListener {
                         event.setStatusCode(200);
                         event.setContentType("html");
                         event.setHandled(true);
-                        if (true)
-                            return;
-                        event.setStatusCode(404);
-                        handleStatus(event);
                         return;
                     }
                 } catch (URISyntaxException e) {
@@ -68,7 +98,11 @@ public class StatusListener implements EventListener {
                     return;
                 }
                 event.setStatusCode(200);
-                event.setResponseData(Utilities.convertStreamToString(stream));
+                try {
+                    event.setResponseData(readFully(stream, -1, true));
+                } catch (IOException e) {
+                    return;
+                }
                 String contentType = getContentTypeFromFileName(event.getPage());
                 event.setContentType(contentType);
                 return;

@@ -4,17 +4,14 @@ import me.infuzion.web.server.Server;
 import me.infuzion.web.server.event.Event;
 import me.infuzion.web.server.event.def.PageRequestEvent;
 
-import java.io.BufferedWriter;
-import java.io.IOException;
-import java.io.OutputStreamWriter;
-import java.io.Writer;
+import java.io.*;
 import java.net.Socket;
 import java.util.Map;
 
 public class DefaultResponseGenerator implements ResponseGenerator {
     @Override
     public void generateResponse(Socket socket, Event event) throws Exception {
-        long lastRequestTime = System.currentTimeMillis();
+        long lastRequestTime = event.getStartTime();
         if (!(event instanceof PageRequestEvent)) {
             return;
         }
@@ -22,22 +19,24 @@ public class DefaultResponseGenerator implements ResponseGenerator {
         PageRequestEvent requestEvent = (PageRequestEvent) event;
         int status = requestEvent.getStatusCode();
         String contentType = requestEvent.getContentType();
-        String responseData = requestEvent.getResponseData();
+        byte[] rawResponse = requestEvent.getResponseDataRaw();
         Map<String, String> headers = requestEvent.getAdditionalHeadersToSend();
 
         writer.write("HTTP/2.0" + status + "\r\n");
-        writeHeaderLine(writer, "Content-Type", contentType + "; charset=UTF-8");
+        writeHeaderLine(writer, "Content-Type", contentType);
 
         writeHeaderLine(writer, "Content-Length",
-                (responseData != null ? responseData.getBytes("UTF-8").length : 0));
+                (rawResponse != null ? rawResponse.length : 0));
 
         writeHeaderLine(writer, "X-Powered-By: Java Web Server v", Server.version);
 
         writeHeaders(writer, headers);
 
-        writeLastHeaderLine(writer, "X-Request-Time", (System.currentTimeMillis() - lastRequestTime));
-        writer.append(responseData);
+        writeLastHeaderLine(writer, "X-Request-Time", (System.currentTimeMillis() - lastRequestTime) + "ms");
         writer.flush();
+        OutputStream out = socket.getOutputStream();
+        out.write(requestEvent.getResponseDataRaw());
+        out.flush();
         socket.close();
     }
 

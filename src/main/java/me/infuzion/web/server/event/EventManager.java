@@ -25,11 +25,13 @@ import me.infuzion.web.server.event.reflect.*;
 import me.infuzion.web.server.listener.RedirectListener;
 import me.infuzion.web.server.listener.StatusListener;
 import me.infuzion.web.server.listener.WebSocketListener;
+import me.infuzion.web.server.router.EventRoute;
 
 import java.lang.annotation.Annotation;
 import java.lang.reflect.Method;
 import java.util.ArrayList;
 import java.util.List;
+import java.util.Map;
 
 public class EventManager {
 
@@ -71,56 +73,92 @@ public class EventManager {
     }
 
     private boolean callListener(Event event, Listener listener) throws Exception {
-        Object o = listener.getListenerMethod().invoke(listener.getEventListener(), event);
+        Object o = listener.getListenerMethod().invoke(listener.getEventListener(), (Object) event);
         return o instanceof Boolean && (boolean) o;
     }
 
+    private void callListener(Event event, Listener listener, Map<String, String> dynSeg) throws Exception {
+        listener.getListenerMethod().invoke(listener.getEventListener(), event, dynSeg);
+    }
+
     private void fireEvent(Event event, EventPriority priority) throws Exception {
-        for (Listener listener : HandlerList.getAllListeners()) {
-            if (listener.getEvent().equals(event.getClass()) && listener.getPriority().equals(priority)) {
-                callListener(event, listener);
+        try {
+            for (Listener listener : HandlerList.getAllListeners()) {
+                if (listener.getEvent().equals(event.getClass()) && listener.getPriority().equals(priority)) {
+                    EventRoute route = listener.getRoute();
+                    if (route != null && listener.isDynamicRouting()) {
+                        Map<String, String> dynSeg = event.getRouter().parseDynamicSegments(route.getPath(), route.getMethods());
+                        if (dynSeg != null) {
+                            callListener(event, listener, dynSeg);
+                        }
+                        continue;
+                    }
+//                    System.out.println("Calling " + listener.getListenerMethod().getDeclaringClass() + " - " + listener.getListenerMethod().getName());
+                    callListener(event, listener);
+                }
             }
+        } catch (Exception e) {
+            e.printStackTrace();
         }
     }
 
     public void registerListener(EventListener listener) {
         Method[] methods = listener.getClass().getDeclaredMethods();
-        Method[] eventConditions = new Method[methods.length];
-        int i = 0;
-        for (Method method : methods) {
-            Annotation annotation = method.getAnnotation(EventCondition.class);
-            if (annotation == null) {
-                continue;
-            }
-            if (method.getParameterCount() != 1) {
-                continue;
-            }
-            method.setAccessible(true);
-            Class parameterType = method.getParameterTypes()[0];
 
-            if (String.class.equals(parameterType)) {
-                eventConditions[i] = method;
-                i++;
-            }
-        }
         for (Method method : methods) {
             Annotation annotation = method.getAnnotation(EventHandler.class);
+            Route route = method.getAnnotation(Route.class);
             if (annotation == null) {
                 continue;
             }
-            EventPriority priority = ((EventHandler) annotation).priority();
-            EventControl control = ((EventHandler) annotation).control();
-            if (method.getParameterCount() != 1) {
+
+            if (method.getParameterCount() != 1 && method.getParameterCount() != 2) {
+                System.out.println("Invalid method declared: " + method.getDeclaringClass().getName() + " - " + method.getName());
                 continue;
             }
+
+            EventRoute routeObj = null;
+            boolean dyanmicRouting = false;
+            if (route != null) {
+                routeObj = new EventRoute(route.path(), route.methods());
+                dyanmicRouting = true;
+            }
+
+
+            EventPriority priority = ((EventHandler) annotation).priority();
+            EventControl control = ((EventHandler) annotation).control();
+
             method.setAccessible(true);
             Class listenerMethodClass = method.getParameterTypes()[0];
 
+            if (method.getParameterCount() == 1) {
+                System.out.println(
+                        "Method " + method.getDeclaringClass().getName() + " - " + method.getName()
+                                + " cannot use dynamic routes." +
+                                "Second param needs to be of type Map<String, String>");
+                dyanmicRouting = false;
+                routeObj = null;
+            }
+
             if (Event.class.isAssignableFrom(listenerMethodClass)) {
-                eventTypes.stream()
-                        .filter(listenerMethodClass::isAssignableFrom)
-                        .forEach(eventType -> Event.getHandler()
-                                .addListener(new Listener(priority, eventType, method, listener, control, eventConditions)));
+
+                for (Class<? extends Event> eventType : eventTypes) {
+                    if (listenerMethodClass.isAssignableFrom(eventType)) {
+                        if (dyanmicRouting) {
+                            Class dynamicSegments = method.getParameterTypes()[1];
+                            if (!dynamicSegments.equals(Map.class)) {
+                                routeObj = null;
+                                System.out.println(
+                                        "Method " + method.getDeclaringClass().getName() + " - " + method.getName()
+                                                + " cannot use dynamic routes." +
+                                                "Second param needs to be of type Map<String, String>");
+                            }
+                        }
+                        Event.getHandler().addListener(
+                                new Listener(priority, eventType, method, listener, control, routeObj, dyanmicRouting));
+
+                    }
+                }
             }
         }
     }
