@@ -16,15 +16,16 @@
 <!jpl
 #While statement
     var i = 0;
+    echo i;
 var code = 2;
-while(i <= 10) {
-        echo "current index: " . i . "<br>";
-#i = i + 1;
-    }
+while (i <= 10) {
+    echo "current index: " . i . "<br>";
+    i = i + 1;
+}
 
 #For statement
-for(var a = 0; a < 25; a = a+1){
-echo "current index of for loop " . a . "<br>";
+for (var a = 0; a < 25; a = a + 1){
+    echo "current index of for loop " . a . "<br>";
 }
 
  !>

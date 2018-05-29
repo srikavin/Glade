@@ -1,5 +1,5 @@
 /*
- *    Copyright 2016 Infuzion
+ *    Copyright 2018 Srikavin Ramkumar
  *
  *    Licensed under the Apache License, Version 2.0 (the "License");
  *    you may not use this file except in compliance with the License.
@@ -14,18 +14,21 @@
  *    limitations under the License.
  */
 
-package me.infuzion.web.server.jpl;
+package me.infuzion.web.server.listener;
 
 import me.infuzion.web.server.EventListener;
 import me.infuzion.web.server.event.EventManager;
 import me.infuzion.web.server.event.def.PageRequestEvent;
 import me.infuzion.web.server.event.reflect.EventHandler;
-import me.infuzion.web.server.jpl.data.jpl.JPLArray;
-import me.infuzion.web.server.jpl.data.jpl.JPLString;
-import me.infuzion.web.server.jpl.data.node.Node;
-import me.infuzion.web.server.jpl.data.node.Variable;
 import me.infuzion.web.server.util.HttpParameters;
 import me.infuzion.web.server.util.Utilities;
+import me.srikavin.jpl.Interpreter;
+import me.srikavin.jpl.JPLLexer;
+import me.srikavin.jpl.JPLParser;
+import me.srikavin.jpl.data.jpl.JPLArray;
+import me.srikavin.jpl.data.jpl.JPLString;
+import me.srikavin.jpl.data.node.Node;
+import me.srikavin.jpl.data.node.Variable;
 
 import java.io.InputStream;
 import java.util.HashMap;
@@ -45,10 +48,10 @@ public class JPLExecutor implements EventListener {
     @EventHandler
     public void onPageLoad(PageRequestEvent event) {
         System.out.println(event.getPage());
-        if (event.getPage().endsWith(".jpl") && !event.isHandled()) {
+        if ((event.getPage().endsWith(".jpl") && !event.isHandled()) || event.getContentType().equals("jpl")) {
             InputStream stream = getClass().getResourceAsStream("/web/" + event.getPage());
             if (event.getUrlParameters().getParameters().containsKey("noredir")) {
-                event.setContentType("text/text");
+                event.setContentType("text");
                 event.setResponseData(Utilities.convertStreamToString(stream));
                 event.setStatusCode(200);
                 return;
@@ -93,11 +96,11 @@ public class JPLExecutor implements EventListener {
 
         Matcher calcMatcher = calcFunction.matcher(content);
         JPLLexer lexer;
-        Parser parser;
+        JPLParser parser;
         Interpreter interpreter = new Interpreter(variableMap);
         while (calcMatcher.find()) {
             lexer = new JPLLexer(calcMatcher.group(0));
-            parser = new Parser(lexer);
+            parser = new JPLParser(lexer);
             interpreter.interpret(parser);
             String result = interpreter.getOutput();
             content = content.replace(calcMatcher.group(0), result);
