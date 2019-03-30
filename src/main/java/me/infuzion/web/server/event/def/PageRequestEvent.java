@@ -46,7 +46,7 @@ public class PageRequestEvent extends Event {
     private String contentType = "text/html";
     private byte[] bytes;
 
-    public PageRequestEvent(String page, String requestData, String host, String headers,
+    public PageRequestEvent(String page, String requestData, String host, Map<String, String> headers,
                             UUID sessionUuid, Map<String, Object> session, HTTPMethod method, byte[] raw)
             throws MalformedURLException, UnsupportedEncodingException {
         this.requestData = requestData;
@@ -56,17 +56,7 @@ public class PageRequestEvent extends Event {
         URL url = new URL("http://" + host + page);
         this.page = url.getPath();
 
-        Map<String, String> tempHeaders = new TreeMap<>(String.CASE_INSENSITIVE_ORDER);
-        if (headers != null && headers.length() > 0) {
-            String[] headerArr = headers.split("\r\n");
-            for (String e : headerArr) {
-                String[] keyValue = e.split(":", 2);
-                if (keyValue.length == 2) {
-                    tempHeaders.put(keyValue[0].trim(), keyValue[1].trim());
-                }
-            }
-        }
-        this.headers = Collections.unmodifiableMap(tempHeaders);
+        this.headers = headers;
 
         urlParameters = new HttpParameters("GET", Utilities.splitQuery(url));
 

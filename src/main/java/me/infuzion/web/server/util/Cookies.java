@@ -1,19 +1,19 @@
 package me.infuzion.web.server.util;
 
 import java.net.HttpCookie;
-import java.util.ArrayList;
-import java.util.Iterator;
-import java.util.List;
-import java.util.Spliterator;
+import java.util.*;
 import java.util.function.Consumer;
-import java.util.stream.Stream;
 
 public class Cookies implements Iterable<HttpCookie> {
     private final List<HttpCookie> cookies;
     private final List<HttpCookie> modified;
 
     public Cookies(String cookiesHeader) {
-        cookies = HttpCookie.parse(cookiesHeader);
+        if (cookiesHeader != null) {
+            cookies = HttpCookie.parse(cookiesHeader);
+        } else {
+            cookies = new ArrayList<>();
+        }
         modified = new ArrayList<>();
         cookies.forEach((cookie) -> cookie.setVersion(1));
     }
@@ -23,8 +23,14 @@ public class Cookies implements Iterable<HttpCookie> {
     }
 
     public HttpCookie getCookie(String key) {
-        return Stream.concat(modified.stream(), cookies.stream())
-                .filter(httpCookie -> httpCookie.getName().equals(key)).findFirst().orElse(null);
+        Optional<HttpCookie> modifiedCookie = modified.stream().filter(e -> e.getName().equals(key)).findFirst();
+        if (modifiedCookie.isPresent()) {
+            return modifiedCookie.get();
+        }
+
+        Optional<HttpCookie> cookie = cookies.stream().filter(e -> e.getName().equals(key)).findFirst();
+        return cookie.orElse(null);
+
     }
 
     public List<HttpCookie> getModified() {

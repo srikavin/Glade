@@ -8,10 +8,11 @@ import me.infuzion.web.server.event.def.WebSocketEvent;
 import me.infuzion.web.server.event.def.WebSocketMessageEvent;
 
 import java.io.*;
+import java.math.BigInteger;
 import java.net.Socket;
 import java.nio.ByteBuffer;
+import java.nio.charset.StandardCharsets;
 import java.util.ArrayList;
-import java.util.Arrays;
 import java.util.Map;
 import java.util.UUID;
 import java.util.concurrent.TimeUnit;
@@ -60,15 +61,30 @@ public class WebSocketResponseGenerator extends DefaultResponseGenerator impleme
         }
     }
 
+    public void sendFrame(UUID id, byte[] payload, byte opCode) throws IOException {
+        for (WebSocketClient e : connections) {
+            if (e.getSessionUUID().equals(id)) {
+                sendFrame(e.getSocket(), generateFrame(payload, opCode));
+                return;
+            }
+        }
+    }
+
     protected void sendFrame(Socket e, byte[] payload) throws IOException {
         OutputStream stream = e.getOutputStream();
         stream.write(payload);
         stream.flush();
     }
 
-    protected byte[] generateFrame(String payload, byte opCode) throws UnsupportedEncodingException {
-        System.out.println("Sending " + payload + " with opCode: " + opCode);
-        byte[] payloadBytes = payload.getBytes("UTF-8");
+    protected byte[] generateFrame(String payload, byte opCode) {
+        if (payload.length() < 100) {
+            System.out.println("Sending " + payload + " with opCode: " + opCode);
+        }
+        byte[] payloadBytes = payload.getBytes(StandardCharsets.UTF_8);
+        return generateFrame(payloadBytes, opCode);
+    }
+
+    protected byte[] generateFrame(byte[] payloadBytes, byte opCode) {
         byte[] header = new byte[10];
 
         header[0] = (byte) (0b1000_0000 + opCode);
@@ -84,21 +100,15 @@ public class WebSocketResponseGenerator extends DefaultResponseGenerator impleme
             header[3] = (byte) (payloadBytes.length & 255);
             dataStartIndex = 4;
         } else {
+            BigInteger bi = BigInteger.valueOf(payloadBytes.length & ~Long.MIN_VALUE);
+            ByteBuffer buffer = ByteBuffer.wrap(header);
             header[1] = 127;
-            header[2] = (byte) ((payloadBytes.length >> 24) & 255);
-            header[3] = (byte) ((payloadBytes.length >> 16) & 255);
-            header[4] = (byte) ((payloadBytes.length >> 8) & 255);
-            header[5] = (byte) (payloadBytes.length & 255);
-            header[6] = (byte) ((payloadBytes.length >> 24) & 255);
-            header[7] = (byte) ((payloadBytes.length >> 16) & 255);
-            header[8] = (byte) ((payloadBytes.length >> 8) & 255);
-            header[9] = (byte) (payloadBytes.length & 255);
+            buffer.putLong(2, bi.longValue());
             dataStartIndex = 10;
         }
         byte[] toRet = new byte[dataStartIndex + payloadBytes.length];
         System.arraycopy(header, 0, toRet, 0, dataStartIndex);
         System.arraycopy(payloadBytes, 0, toRet, dataStartIndex, payloadBytes.length);
-        System.out.println(Arrays.toString(toRet));
         return toRet;
     }
 
@@ -122,12 +132,11 @@ public class WebSocketResponseGenerator extends DefaultResponseGenerator impleme
                     counter++;
                     for (WebSocketClient e : connections) {
                         try {
-                            if (counter % 20 == 0) {
-                                sendFrame(e.getSocket(), generateFrame("ping", (byte) 0x9));
+                            if (counter % 2000 == 0) {
+                                sendFrame(e.getSocket(), generateFrame("ping", OpCodes.PING));
                             }
 
-                            //noinspection IOResourceOpenedButNotSafelyClosed, resource
-                            BufferedInputStream inputStream = new BufferedInputStream(e.getSocket().getInputStream());
+                            BufferedInputStream inputStream = e.inputStream;
                             if (inputStream.available() > 0) {
                                 byte[] headers = new byte[2]; // Websocket headers
                                 int size = inputStream.read(headers);
@@ -140,13 +149,28 @@ public class WebSocketResponseGenerator extends DefaultResponseGenerator impleme
                                 boolean fin = ((headers[0] >> 7) & 1) != 0;
                                 boolean masked = ((headers[1] >> 7) & 1) == 1;
 
-                                if (!masked) {
-                                    toRemove.add(e); // Client must mask connections to server
-                                    continue;
-                                }
 
                                 long payloadSize = headers[1] & 127;
                                 byte opCode = (byte) (headers[0] - ((headers[0] >> 4) << 4));
+
+
+                                if (!masked) {
+                                    // Client must mask connections to server
+                                    toRemove.add(e);
+                                    continue;
+                                }
+
+                                if (OpCodes.isReserved(opCode)) {
+                                    //Reserved opcodes cannot be used
+                                    toRemove.add(e);
+                                    continue;
+                                }
+
+                                if (OpCodes.isControl(opCode) && !fin) {
+                                    //Control frames cannot be continued
+                                    toRemove.add(e);
+                                    continue;
+                                }
 
                                 if (payloadSize == 126) {
                                     byte[] len = new byte[2];
@@ -156,17 +180,20 @@ public class WebSocketResponseGenerator extends DefaultResponseGenerator impleme
                                         continue;
                                     }
                                     ByteBuffer buffer = ByteBuffer.wrap(len);
-                                    payloadSize = buffer.getShort(0);
-                                } else if (payloadSize == 127) { // too big
-                                    continue;
-                                    /*byte[] len = new byte[8];
+                                    payloadSize = buffer.getShort(0) & 0xffff;
+                                } else if (payloadSize == 127) {
+                                    byte[] len = new byte[8];
                                     int read = inputStream.read(len);
                                     if (read != 8) {
                                         toRemove.add(e);
                                         continue;
                                     }
                                     ByteBuffer buffer = ByteBuffer.wrap(len);
-                                    payloadSize = buffer.getShort(0);*/
+                                    payloadSize = buffer.getLong(0);
+
+                                    BigInteger bi = BigInteger.valueOf(payloadSize & ~Long.MIN_VALUE);
+                                    if (payloadSize < 0) bi = bi.setBit(63);
+                                    payloadSize = bi.longValue();
                                 }
 
                                 byte[] masks = new byte[4];
@@ -188,38 +215,45 @@ public class WebSocketResponseGenerator extends DefaultResponseGenerator impleme
                                     decoded[i] = (byte) (payload[i] ^ masks[i % 4]);
                                 }
 
-
-                                String decodedPayload = new String(decoded, "UTF-8");
+                                String decodedPayload = new String(decoded, StandardCharsets.UTF_8);
                                 e.lastPing = System.currentTimeMillis();
 
-                                if (opCode == 0x8) {
+                                if (opCode == OpCodes.CLOSE) {
                                     toRemove.add(e);
                                     continue;
                                 }
-                                if (opCode == 0x9) {
-                                    sendFrame(e.getSocket(), generateFrame(decodedPayload, (byte) 0x10));
+                                if (opCode == OpCodes.PING) {
+                                    // Control frames can only have upto 125 bytes as a payload
+                                    if (payloadSize > 125) {
+                                        toRemove.add(e);
+                                        continue;
+                                    }
+                                    sendFrame(e.getSocket(), generateFrame(decoded, OpCodes.PONG));
                                     continue;
                                 }
 
-                                if (opCode == 0xA) {
+                                if (opCode == OpCodes.PONG) {
                                     continue;
                                 }
+
                                 WebSocketEvent event;
                                 if (fin) {
                                     if (e.lastPartialMessage == null) {
                                         event = new WebSocketMessageEvent(e.getSessionUUID(), decodedPayload, opCode, e.event);
-                                        System.out.println(decodedPayload);
                                     } else {
+                                        e.lastPartialMessage.write(decoded);
                                         event = new WebSocketMessageEvent(e.getSessionUUID(),
-                                                e.lastPartialMessage + decodedPayload, opCode, e.event);
-                                        System.out.println(e.lastPartialMessage + decodedPayload);
+                                                new String(e.lastPartialMessage.toByteArray(), StandardCharsets.UTF_8),
+                                                opCode, e.event);
                                     }
-                                    e.lastPartialMessage = null;
+                                    e.lastPartialMessage.reset();
+                                    e.hasPartial = false;
                                 } else {
-                                    //noinspection StringConcatenationInLoop
-                                    e.lastPartialMessage += decodedPayload;
+                                    e.lastPartialMessage.write(decoded);
                                     event = new FragmentedWebSocketEvent(e.getSessionUUID(), decodedPayload, opCode, e.event);
+                                    e.hasPartial = true;
                                 }
+
                                 manager.fireEvent(event);
 
                                 for (String toAll : event.getToSendToAll()) {
@@ -252,12 +286,16 @@ public class WebSocketResponseGenerator extends DefaultResponseGenerator impleme
                     }
                     for (WebSocketClient e : toRemove) {
                         System.out.println("Removing client!");
+                        try {
+                            sendFrame(e.sessionUUID, "", OpCodes.CLOSE);
+                        } catch (Exception ignored) {
+                        }
                         e.socket.close();
                         connections.remove(e);
                     }
                     toRemove.clear();
-                    TimeUnit.MILLISECONDS.sleep(50);
                 }
+                TimeUnit.MILLISECONDS.sleep(50);
             } catch (Exception e) {
                 e.printStackTrace();
             }
@@ -266,16 +304,19 @@ public class WebSocketResponseGenerator extends DefaultResponseGenerator impleme
 
     private static class WebSocketClient {
         private final Socket socket;
+        final PageRequestEvent event;
         private final UUID sessionUUID;
-        private final PageRequestEvent event;
+        private final BufferedInputStream inputStream;
         long lastPing;
-        String lastPartialMessage = null;
+        boolean hasPartial = false;
+        ByteArrayOutputStream lastPartialMessage = new ByteArrayOutputStream();
 
-        WebSocketClient(Socket socket, PageRequestEvent event) {
+        WebSocketClient(Socket socket, PageRequestEvent event) throws IOException {
             this.socket = socket;
             this.event = event;
             this.sessionUUID = event.getSessionUuid();
             this.lastPing = System.currentTimeMillis();
+            inputStream = new BufferedInputStream(socket.getInputStream());
         }
 
         Socket getSocket() {
@@ -288,10 +329,20 @@ public class WebSocketResponseGenerator extends DefaultResponseGenerator impleme
     }
 
     static final class OpCodes {
+        public final static byte CONTINUATION = 0x0;
         public final static byte TEXT = 0x1;
+        public final static byte BINARY = 0x2;
         public final static byte CLOSE = 0x8;
-        public final static byte PONG = 0xA;
         public final static byte PING = 0x9;
+        public final static byte PONG = 0xA;
+
+        public static boolean isReserved(byte opcode) {
+            return (3 <= opcode && opcode <= 7) || (0xB <= opcode && opcode <= 0xF);
+        }
+
+        public static boolean isControl(byte opcode) {
+            return opcode == CLOSE || opcode == PONG || opcode == PING;
+        }
 
     }
 }

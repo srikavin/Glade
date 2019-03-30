@@ -22,7 +22,7 @@ public class DefaultResponseGenerator implements ResponseGenerator {
         byte[] rawResponse = requestEvent.getResponseDataRaw();
         Map<String, String> headers = requestEvent.getAdditionalHeadersToSend();
 
-        writer.write("HTTP/2.0" + status + "\r\n");
+        writer.write("HTTP/1.0 " + status + "\r\n");
         writeHeaderLine(writer, "Content-Type", contentType);
 
         writeHeaderLine(writer, "Content-Length",
@@ -51,7 +51,7 @@ public class DefaultResponseGenerator implements ResponseGenerator {
     }
 
     protected Writer writeLastHeaderLine(Writer writer, String key, Object value) throws IOException {
-        return writeHeaderLine(writer, key, value).append('\n');
+        return writeHeaderLine(writer, key, value).append("\r\n");
     }
 
     protected Writer writeHeaderLine(Writer writer, String key, Object value) throws IOException {

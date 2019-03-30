@@ -25,10 +25,10 @@ import me.infuzion.web.server.event.reflect.EventPriority;
 import me.infuzion.web.server.response.WebSocketResponseGenerator;
 import me.infuzion.web.server.util.HTTPMethod;
 
-import javax.xml.bind.DatatypeConverter;
-import java.io.UnsupportedEncodingException;
+import java.nio.charset.StandardCharsets;
 import java.security.MessageDigest;
 import java.security.NoSuchAlgorithmException;
+import java.util.Base64;
 import java.util.HashMap;
 import java.util.Map;
 
@@ -78,7 +78,7 @@ public class WebSocketListener implements EventListener {
                 return responseGenerator;
             });
             event.setResponseGenerator(urlResponseGeneratorMap.get(event.getPage()));
-        } catch (NoSuchAlgorithmException | UnsupportedEncodingException e) {
+        } catch (NoSuchAlgorithmException e) {
             e.printStackTrace();
             event.setStatusCode(500);
             event.setHandled(true);
@@ -87,11 +87,11 @@ public class WebSocketListener implements EventListener {
         return true;
     }
 
-    public String generateWebSocketAccept(String secKey) throws NoSuchAlgorithmException, UnsupportedEncodingException {
-        return DatatypeConverter.printBase64Binary(
+    public String generateWebSocketAccept(String secKey) throws NoSuchAlgorithmException {
+        return Base64.getEncoder().encodeToString(
                 MessageDigest.getInstance("SHA-1")
                         .digest((secKey + websocketGUID)
-                                .getBytes("UTF-8")));
+                                .getBytes(StandardCharsets.UTF_8)));
 
     }
 }

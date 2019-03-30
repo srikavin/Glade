@@ -26,12 +26,15 @@ import me.infuzion.web.server.util.HTTPMethod;
 import me.infuzion.web.server.util.Utilities;
 
 import java.io.*;
+import java.net.HttpCookie;
 import java.net.ServerSocket;
 import java.net.Socket;
 import java.nio.charset.StandardCharsets;
-import java.util.HashMap;
+import java.util.Collections;
 import java.util.Map;
+import java.util.TreeMap;
 import java.util.UUID;
+import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.ExecutorService;
 import java.util.concurrent.Executors;
 import java.util.concurrent.TimeUnit;
@@ -53,7 +56,7 @@ public class Server implements Runnable {
         running = true;
         initialized = false;
         eventManager = new EventManager();
-        session = new HashMap<>();
+        session = new ConcurrentHashMap<>();
     }
 
     public void init() {
@@ -62,10 +65,6 @@ public class Server implements Runnable {
 
     public EventManager getEventManager() {
         return eventManager;
-    }
-
-    public Map<UUID, Map<String, Object>> getSession() {
-        return session;
     }
 
     @Override
@@ -82,6 +81,11 @@ public class Server implements Runnable {
                     try {
                         onRequest(client);
                     } catch (IOException e) {
+                        try {
+                            client.close();
+                        } catch (IOException ex) {
+                            ex.printStackTrace();
+                        }
                         e.printStackTrace();
                     }
                 });
@@ -91,112 +95,110 @@ public class Server implements Runnable {
         }
     }
 
+    protected Map<String, String> parseHeaders(String[] split) {
+        //This map allows for case-insensitive keys
+        Map<String, String> headerMap = new TreeMap<>(String.CASE_INSENSITIVE_ORDER);
+
+
+        for (String field : split) {
+            field = field.replace("\r\n", "");
+            if (field.isEmpty()) {
+                continue;
+            }
+
+            // The key value pair; Content-Length, 32
+            String[] kv = field.split(":", 2);
+            if (kv.length != 2) {
+                continue;
+            }
+
+            headerMap.put(kv[0], kv[1].trim());
+        }
+        return Collections.unmodifiableMap(headerMap);
+    }
+
     private void onRequest(Socket client) throws IOException {
         InputStream in = client.getInputStream();
 //        BufferedInputStream in = new BufferedInputStream(client.getInputStream());
         ByteArrayOutputStream out = new ByteArrayOutputStream();
-        int amountRead;
         byte[] bytes;
 
-        do {
-            bytes = new byte[1024];
-            amountRead = in.read(bytes);
+        //Set socket time out to 7.5 seconds
+        client.setSoTimeout(7500);
+
+        int headerEndPosition = 0;
+        while (headerEndPosition != 4) {
+            bytes = new byte[1];
+            in.read(bytes);
             out.write(bytes);
-        } while (amountRead > 0 && in.available() > 0);
+            if (headerEndPosition % 2 == 0 && bytes[0] == '\r') {
+                headerEndPosition++;
+            } else if (headerEndPosition % 2 == 1 && bytes[0] == '\n') {
+                headerEndPosition++;
+            } else {
+                headerEndPosition = 0;
+            }
+        }
 
         byte[] rawBytes = out.toByteArray();
         String rawStr = new String(rawBytes);
-        int contStart = rawStr.indexOf("\r\n\r\n");
-        if (contStart != -1) {
-            contStart += 4;
+
+        String[] split = rawStr.split("\r\n");
+        String[] request = split[0].split(" ", 3);
+        HTTPMethod method = HTTPMethod.valueOf(request[0]);
+        String page = request[1].trim();
+
+        Map<String, String> headers = parseHeaders(split);
+
+        int contentLength = Integer.parseInt(headers.getOrDefault("Content-Length", "-1"));
+
+        byte[] content = null;
+        // Read upto 16 MiB
+        if (contentLength > 0 && contentLength <= 1024 * 1024 * 16) {
+            content = new byte[contentLength];
+            int amountRead = 0;
+            while (amountRead != contentLength) {
+                int tmp = in.read(content, amountRead, content.length);
+                if (tmp == -1) {
+                    client.close();
+                    return;
+                }
+                amountRead += tmp;
+            }
         }
 
-        BufferedReader reader = new BufferedReader(new StringReader(rawStr));
+        UUID sessionUuid = null;
+        {
+            String temp = headers.get("Cookie");
+            Cookies cookies = new Cookies(temp);
+            HttpCookie sessionCookie = cookies.getCookie("session");
+            if (sessionCookie != null) {
+                try {
+                    UUID tempuuid = UUID.fromString(sessionCookie.getValue());
+                    session.putIfAbsent(tempuuid, new ConcurrentHashMap<>());
+                    sessionUuid = tempuuid;
+                } catch (IllegalArgumentException ignored) {
+                }
+            }
+
+        }
 
         try {
-            int contentLength = -1;
-            String page = "";
             String hostName = "";
-            UUID sessionUuid = null;
-            HTTPMethod method = null;
-            StringBuilder headers = new StringBuilder();
-            int lineNumber = 0;
-            while (true) {
-                lineNumber++;
-                final String line = reader.readLine();
-                if (line == null) {
-                    return;
-                }
-                headers.append(line).append("\r\n");
-                final String contentLengthStr = "Content-Length: ";
-                final String hostStr = "Host: ";
-                final String cookieStr = "Cookie: ";
-                if (line.startsWith(contentLengthStr)) {
-                    contentLength = Integer.parseInt(line.substring(contentLengthStr.length()));
-                    continue;
-                }
-                if (line.startsWith(hostStr)) {
-                    hostName = line.substring(hostStr.length());
-                    continue;
-                }
 
-                if (line.startsWith(cookieStr)) {
-                    String temp = line.substring(cookieStr.length());
-                    String[] cookies = temp.split(";");
-                    for (String e : cookies) {
-                        String[] cookie = e.split("=", 2);
-                        if (cookie[0].trim().equals("session")) {
-                            try {
-                                UUID tempuuid = UUID.fromString(cookie[1]);
-                                session.computeIfAbsent(tempuuid,
-                                        id -> session.put(id, new HashMap<>()));
-                                sessionUuid = tempuuid;
-                            } catch (IllegalArgumentException ignored) {
-                            }
-                        }
-                    }
-                    new Cookies(temp);
-                }
+            String contentString = content != null ? new String(content, StandardCharsets.ISO_8859_1) : "";
 
-                if (lineNumber == 1) {
-                    String[] split = line.split(" ");
-                    method = HTTPMethod.valueOf(split[0].toUpperCase());
-                    page = split[1];
-                    continue;
-                }
-
-                if (lineNumber > 1 && method == null) {
-                    return;
-                }
-
-                if (line.length() == 0) {
-                    break;
-                }
-            }
-
-            byte[] raw = null;
-            if (contentLength > 0) {
-                raw = new byte[contentLength];
-                System.arraycopy(rawBytes, contStart, raw, 0, contentLength);
-            }
-
-            boolean setCookie = false;
             if (sessionUuid == null) {
-                setCookie = true;
                 sessionUuid = UUID.randomUUID();
-                session.put(sessionUuid, new HashMap<>());
+                session.put(sessionUuid, new ConcurrentHashMap<>());
             }
-
-            String contentString = raw != null ? new String(raw, StandardCharsets.ISO_8859_1) : "";
-
             PageRequestEvent event = new PageRequestEvent(page, contentString, hostName,
-                    headers.toString(),
-                    sessionUuid, session.get(sessionUuid), method, raw);
+                    headers,
+                    sessionUuid, session.get(sessionUuid), method, content);
 
-            if (setCookie) {
-                event.addHeader("Set-Cookie", "session=" + sessionUuid);
-            }
-//            Thread.currentThread().setName("Request for: " + event.getPage());
+            event.addHeader("Set-Cookie", "session=" + sessionUuid);
+
+            Thread.currentThread().setName("Request for: " + event.getPage());
 
             event.setResponseGenerator(new DefaultResponseGenerator());
             eventManager.fireEvent(event);
@@ -207,18 +209,18 @@ public class Server implements Runnable {
                 event.setContentType(mimeType.getMimeType());
             }
 
-            event.getResponseGenerator().generateResponse(client, event);
             System.out.println(
                     "Request received from: " + client.getInetAddress() + ":" + client.getPort() + " - " +
                             event.getStatusCode() + " " + (System.currentTimeMillis() - lastRequestTime)
                             + "ms " + event.getPage());
+            event.getResponseGenerator().generateResponse(client, event);
         } catch (Exception e) {
             e.printStackTrace();
 
             String response = Utilities.convertStreamToString(getClass().getResourceAsStream("/web/error/500.html"));
             BufferedWriter writer = new BufferedWriter(new OutputStreamWriter(client.getOutputStream()));
             writer.append("HTTP/1.1 500 Server Error\r\n")
-                    .append("Content-Length: " + response.getBytes("UTF-8").length + "\r\n\n")
+                    .append("Content-Length: " + response.getBytes(StandardCharsets.UTF_8).length + "\r\n\n")
                     .append(response);
             writer.close();
         }
