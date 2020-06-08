@@ -142,6 +142,7 @@ public class WebSocketResponseGenerator extends DefaultResponseGenerator impleme
                                 int size = inputStream.read(headers);
 
                                 if (size != 2) {
+                                    System.out.println(1);
                                     toRemove.add(e);
                                     continue;
                                 }
@@ -156,18 +157,21 @@ public class WebSocketResponseGenerator extends DefaultResponseGenerator impleme
 
                                 if (!masked) {
                                     // Client must mask connections to server
+                                    System.out.println(2);
                                     toRemove.add(e);
                                     continue;
                                 }
 
                                 if (OpCodes.isReserved(opCode)) {
                                     //Reserved opcodes cannot be used
+                                    System.out.println(3);
                                     toRemove.add(e);
                                     continue;
                                 }
 
                                 if (OpCodes.isControl(opCode) && !fin) {
                                     //Control frames cannot be continued
+                                    System.out.println(4);
                                     toRemove.add(e);
                                     continue;
                                 }
@@ -176,6 +180,7 @@ public class WebSocketResponseGenerator extends DefaultResponseGenerator impleme
                                     byte[] len = new byte[2];
                                     int read = inputStream.read(len);
                                     if (read != 2) {
+                                        System.out.println(5);
                                         toRemove.add(e);
                                         continue;
                                     }
@@ -185,6 +190,7 @@ public class WebSocketResponseGenerator extends DefaultResponseGenerator impleme
                                     byte[] len = new byte[8];
                                     int read = inputStream.read(len);
                                     if (read != 8) {
+                                        System.out.println(6);
                                         toRemove.add(e);
                                         continue;
                                     }
@@ -200,6 +206,7 @@ public class WebSocketResponseGenerator extends DefaultResponseGenerator impleme
                                 int masksRead = inputStream.read(masks);
 
                                 if (masksRead != 4) {
+                                    System.out.println(7);
                                     toRemove.add(e);
                                     continue;
                                 }
@@ -225,6 +232,7 @@ public class WebSocketResponseGenerator extends DefaultResponseGenerator impleme
                                 if (opCode == OpCodes.PING) {
                                     // Control frames can only have upto 125 bytes as a payload
                                     if (payloadSize > 125) {
+                                        System.out.println(8);
                                         toRemove.add(e);
                                         continue;
                                     }

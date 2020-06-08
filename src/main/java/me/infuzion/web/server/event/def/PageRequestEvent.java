@@ -44,7 +44,7 @@ public class PageRequestEvent extends Event {
     private boolean handled = false;
     private int statusCode;
     private String contentType = "text/html";
-    private byte[] bytes;
+    private byte[] bytes = new byte[0];
 
     public PageRequestEvent(String page, String requestData, String host, Map<String, String> headers,
                             UUID sessionUuid, Map<String, Object> session, HTTPMethod method, byte[] raw)
