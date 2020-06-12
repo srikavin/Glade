@@ -17,6 +17,7 @@
 package me.infuzion.web.server.event.reflect.param;
 
 import com.google.gson.Gson;
+import com.google.gson.JsonSyntaxException;
 
 public class DefaultTypeConverter implements TypeConverter {
     private static final Gson gson = new Gson();
@@ -27,11 +28,15 @@ public class DefaultTypeConverter implements TypeConverter {
             return null;
         }
 
-        if (type.isAssignableFrom(String.class)) {
-            //noinspection unchecked
-            return (T) content;
+        try {
+            return gson.fromJson(content, type);
+        } catch (JsonSyntaxException e) {
+            if (type.isAssignableFrom(String.class)) {
+                //noinspection unchecked
+                return (T) content;
+            }
+            throw e;
         }
-        return gson.fromJson(content, type);
     }
 
     @Override
