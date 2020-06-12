@@ -39,14 +39,6 @@ public class Server {
     public static final String version = "1.5.0";
     private static final FluentLogger logger = FluentLogger.forEnclosingClass();
 
-    static {
-        String path = Server.class
-                .getClassLoader()
-                .getResource("logging.properties")
-                .getFile();
-        System.setProperty("java.util.logging.config.file", path);
-    }
-
     public EventManager getEventManager() {
         return eventManager;
     }
@@ -76,6 +68,7 @@ public class Server {
         });
 
         bodyParsers.add(new MultipartBodyParser());
+        bodyParsers.add(new UrlEncodedBodyParser());
     }
 
     private void handleRead(SelectionKey key, SocketChannel clientChannel, Client client) throws Exception {

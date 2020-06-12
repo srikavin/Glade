@@ -20,6 +20,13 @@ import java.io.IOException;
 import java.net.InetSocketAddress;
 
 public class Main {
+    static {
+        String path = Server.class
+                .getClassLoader()
+                .getResource("logging.properties")
+                .getFile();
+        System.setProperty("java.util.logging.config.file", path);
+    }
 
     public static void main(String[] args) throws IOException {
         Server server = new Server(new InetSocketAddress("0.0.0.0", 8971));
