@@ -17,6 +17,7 @@
 package me.infuzion.web.server.event;
 
 import com.google.common.flogger.FluentLogger;
+import com.google.common.flogger.StackSize;
 import me.infuzion.web.server.EventListener;
 import me.infuzion.web.server.event.def.FragmentedWebSocketEvent;
 import me.infuzion.web.server.event.def.PageRequestEvent;
@@ -44,6 +45,7 @@ public class EventManager {
     private final List<EventRouterEntry<?>> eventRouters = new ArrayList<>();
 
     public void fireEvent(Event event) throws Exception {
+        logger.atFine().withStackTrace(StackSize.MEDIUM).log("Event %s fired", event);
         for (Listener listener : listeners) {
             if (listener.getEvent().equals(event.getClass()) && listener.getControl() == EventControl.FULL) {
                 logger.atFiner().log("Calling %s for %s", listener.getEventListener().getClass().getName(), event.getName());
@@ -119,12 +121,12 @@ public class EventManager {
 
     private void fireEvent(Event event, EventPriority priority) throws Exception {
         for (Listener listener : listeners) {
-            if (event instanceof RequestEvent && listener.getRoute() != null) {
-                callRoutableListener((RequestEvent) event, listener);
-                continue;
-            }
-
             if (listener.getEvent().equals(event.getClass()) && listener.getPriority().equals(priority)) {
+                if (event instanceof RequestEvent && listener.getRoute() != null) {
+                    callRoutableListener((RequestEvent) event, listener);
+                    continue;
+                }
+
                 callListener(event, listener);
             }
         }
