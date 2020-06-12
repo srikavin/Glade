@@ -69,6 +69,7 @@ public class Server {
 
         bodyParsers.add(new MultipartBodyParser());
         bodyParsers.add(new UrlEncodedBodyParser());
+        bodyParsers.add(new JsonBodyParser());
     }
 
     private void handleRead(SelectionKey key, SocketChannel clientChannel, Client client) throws Exception {
