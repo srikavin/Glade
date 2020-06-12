@@ -14,20 +14,26 @@
  * limitations under the License.
  */
 
-package me.infuzion.web.server.event.reflect;
+package me.infuzion.web.server.http.parser;
 
-import me.infuzion.web.server.router.RouteMethod;
+public class ParseException extends RuntimeException {
+    public ParseException() {
+        super();
+    }
 
-import java.lang.annotation.ElementType;
-import java.lang.annotation.Retention;
-import java.lang.annotation.RetentionPolicy;
-import java.lang.annotation.Target;
+    public ParseException(String message) {
+        super(message);
+    }
 
-@Target(ElementType.METHOD)
-@Retention(RetentionPolicy.RUNTIME)
-public @interface Route {
-    String value();
+    public ParseException(String message, Throwable cause) {
+        super(message, cause);
+    }
 
-    RouteMethod[] methods() default {RouteMethod.GET};
+    public ParseException(Throwable cause) {
+        super(cause);
+    }
 
+    protected ParseException(String message, Throwable cause, boolean enableSuppression, boolean writableStackTrace) {
+        super(message, cause, enableSuppression, writableStackTrace);
+    }
 }

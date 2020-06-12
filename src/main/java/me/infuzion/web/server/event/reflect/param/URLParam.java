@@ -14,20 +14,23 @@
  * limitations under the License.
  */
 
-package me.infuzion.web.server.event.reflect;
-
-import me.infuzion.web.server.router.RouteMethod;
+package me.infuzion.web.server.event.reflect.param;
 
 import java.lang.annotation.ElementType;
 import java.lang.annotation.Retention;
 import java.lang.annotation.RetentionPolicy;
 import java.lang.annotation.Target;
 
-@Target(ElementType.METHOD)
+/**
+ * Used to denote that the annotated parameter should be substituted with the specified url path parameter.
+ */
+@Target(ElementType.PARAMETER)
 @Retention(RetentionPolicy.RUNTIME)
-public @interface Route {
+public @interface URLParam {
+    /**
+     * For example, to get the :user_name segment of /path/directory/:user_name/asd , the pathID should be `user_name`.
+     *
+     * @return The id of the path segment.
+     */
     String value();
-
-    RouteMethod[] methods() default {RouteMethod.GET};
-
 }

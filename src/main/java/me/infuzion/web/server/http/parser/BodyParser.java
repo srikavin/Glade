@@ -14,20 +14,14 @@
  * limitations under the License.
  */
 
-package me.infuzion.web.server.event.reflect;
+package me.infuzion.web.server.http.parser;
 
-import me.infuzion.web.server.router.RouteMethod;
+import org.jetbrains.annotations.NotNull;
 
-import java.lang.annotation.ElementType;
-import java.lang.annotation.Retention;
-import java.lang.annotation.RetentionPolicy;
-import java.lang.annotation.Target;
+import java.nio.ByteBuffer;
 
-@Target(ElementType.METHOD)
-@Retention(RetentionPolicy.RUNTIME)
-public @interface Route {
-    String value();
+public interface BodyParser {
+    @NotNull BodyData parse(@NotNull HttpRequest request, @NotNull ByteBuffer body);
 
-    RouteMethod[] methods() default {RouteMethod.GET};
-
+    boolean matches(HttpRequest request, ByteBuffer body);
 }

@@ -1,3 +1,19 @@
+/*
+ * Copyright 2020 Srikavin Ramkumar
+ *
+ * Licensed under the Apache License, Version 2.0 (the "License");
+ * you may not use this file except in compliance with the License.
+ * You may obtain a copy of the License at
+ *
+ *     http://www.apache.org/licenses/LICENSE-2.0
+ *
+ * Unless required by applicable law or agreed to in writing, software
+ * distributed under the License is distributed on an "AS IS" BASIS,
+ * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+ * See the License for the specific language governing permissions and
+ * limitations under the License.
+ */
+
 package me.infuzion.web.server.response;
 
 import me.infuzion.web.server.event.Event;
@@ -7,7 +23,10 @@ import me.infuzion.web.server.event.def.PageRequestEvent;
 import me.infuzion.web.server.event.def.WebSocketEvent;
 import me.infuzion.web.server.event.def.WebSocketMessageEvent;
 
-import java.io.*;
+import java.io.BufferedInputStream;
+import java.io.ByteArrayOutputStream;
+import java.io.IOException;
+import java.io.OutputStream;
 import java.math.BigInteger;
 import java.net.Socket;
 import java.nio.ByteBuffer;
@@ -22,7 +41,7 @@ public class WebSocketResponseGenerator extends DefaultResponseGenerator impleme
     private final static int MAX_SIZE = 65536;
     private final static int PING_TICKS = 20;
     private final ArrayList<WebSocketClient> connections;
-    private EventManager manager;
+    private final EventManager manager;
 
     public WebSocketResponseGenerator(EventManager manager) {
         this.manager = manager;
@@ -31,21 +50,26 @@ public class WebSocketResponseGenerator extends DefaultResponseGenerator impleme
 
     @SuppressWarnings("resource")
     @Override
-    public void generateResponse(Socket socket, Event event) throws Exception {
+    public ByteBuffer generateResponse(Event event) {
         if (!(event instanceof PageRequestEvent)) {
-            return;
+            return null;
         }
         PageRequestEvent pEvent = (PageRequestEvent) event;
-        Writer writer = getWriterFromSocket(socket);
-        writer.write("HTTP/1.1 101 Switching Protocols\r\n");
-        writeHeaderLine(writer, "Upgrade", "websocket");
-        writeHeaderLine(writer, "Connection", "Upgrade");
-        writeHeaders(writer, ((PageRequestEvent) event).getAdditionalHeadersToSend());
-        writeLastHeaderLine(writer, "WebSocket", "WebSocket");
-        writer.flush();
+
+        StringBuilder generated = new StringBuilder(256);
+
+        generated.append("HTTP/1.1 101 Switching Protocols\r\n");
+        writeHeaderLine(generated, "Upgrade", "websocket");
+        writeHeaderLine(generated, "Connection", "Upgrade");
+        writeHeaders(generated, pEvent.getResponse().getHeaders());
+        writeLastHeaderLine(generated, "WebSocket", "WebSocket");
+
         synchronized (connections) {
-            connections.add(new WebSocketClient(socket, pEvent));
+            //TODO: Update
+//            connections.add(new WebSocketClient(socket, pEvent));
         }
+
+        return ByteBuffer.wrap(generated.toString().getBytes(StandardCharsets.UTF_8));
     }
 
     public void sendTextFrame(String payload) throws IOException {
@@ -322,7 +346,8 @@ public class WebSocketResponseGenerator extends DefaultResponseGenerator impleme
         WebSocketClient(Socket socket, PageRequestEvent event) throws IOException {
             this.socket = socket;
             this.event = event;
-            this.sessionUUID = event.getSessionUuid();
+//            this.sessionUUID = event.getSessionUuid();
+            this.sessionUUID = UUID.randomUUID();
             this.lastPing = System.currentTimeMillis();
             inputStream = new BufferedInputStream(socket.getInputStream());
         }

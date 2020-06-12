@@ -1,60 +1,80 @@
+/*
+ * Copyright 2020 Srikavin Ramkumar
+ *
+ * Licensed under the Apache License, Version 2.0 (the "License");
+ * you may not use this file except in compliance with the License.
+ * You may obtain a copy of the License at
+ *
+ *     http://www.apache.org/licenses/LICENSE-2.0
+ *
+ * Unless required by applicable law or agreed to in writing, software
+ * distributed under the License is distributed on an "AS IS" BASIS,
+ * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+ * See the License for the specific language governing permissions and
+ * limitations under the License.
+ */
+
 package me.infuzion.web.server.response;
 
 import me.infuzion.web.server.Server;
 import me.infuzion.web.server.event.Event;
 import me.infuzion.web.server.event.def.PageRequestEvent;
+import me.infuzion.web.server.http.HttpResponse;
 
-import java.io.*;
-import java.net.Socket;
+import java.nio.ByteBuffer;
+import java.nio.charset.StandardCharsets;
 import java.util.Map;
 
 public class DefaultResponseGenerator implements ResponseGenerator {
     @Override
-    public void generateResponse(Socket socket, Event event) throws Exception {
-        long lastRequestTime = event.getStartTime();
+    public ByteBuffer generateResponse(Event event) {
         if (!(event instanceof PageRequestEvent)) {
-            return;
+            return null;
         }
-        Writer writer = getWriterFromSocket(socket);
+
+        long lastRequestTime = event.getCreationTime();
+
         PageRequestEvent requestEvent = (PageRequestEvent) event;
-        int status = requestEvent.getStatusCode();
-        String contentType = requestEvent.getContentType();
-        byte[] rawResponse = requestEvent.getResponseDataRaw();
-        Map<String, String> headers = requestEvent.getAdditionalHeadersToSend();
+        HttpResponse response = requestEvent.getResponse();
 
-        writer.write("HTTP/1.0 " + status + "\r\n");
-        writeHeaderLine(writer, "Content-Type", contentType);
+        int status = response.getStatusCode();
+        String contentType = response.getContentType();
+        ByteBuffer rawResponse = response.getBody();
+        Map<String, String> headers = response.getHeaders();
 
-        writeHeaderLine(writer, "Content-Length",
-                (rawResponse != null ? rawResponse.length : 0));
+        StringBuilder generated = new StringBuilder(256);
 
-        writeHeaderLine(writer, "X-Powered-By: Java Web Server v", Server.version);
+        generated.append("HTTP/1.1 ").append(status).append("\r\n");
 
-        writeHeaders(writer, headers);
+        writeHeaderLine(generated, "Content-Type", contentType);
+        writeHeaderLine(generated, "Content-Length", (rawResponse != null ? rawResponse.limit() : 0));
+        writeHeaderLine(generated, "Connection", "Keep-Alive");
+        writeHeaderLine(generated, "Keep-Alive", "timeout=5, max=1000");
+        writeHeaderLine(generated, "X-Powered-By: Glade v", Server.version);
+        writeHeaders(generated, headers);
 
-        writeLastHeaderLine(writer, "X-Request-Time", (System.currentTimeMillis() - lastRequestTime) + "ms");
-        writer.flush();
-        OutputStream out = socket.getOutputStream();
-        out.write(requestEvent.getResponseDataRaw());
-        out.flush();
-        socket.close();
+        long elapsedTime = System.nanoTime() - lastRequestTime;
+        writeLastHeaderLine(generated, "X-Request-Time", elapsedTime + "ns");
+
+        return StandardCharsets.UTF_8.encode(generated.toString());
     }
 
-    protected void writeHeaders(Writer writer, Map<String, String> headers) throws IOException {
+    @Override
+    public boolean shouldCopyBody(Event event) {
+        return true;
+    }
+
+    protected void writeHeaders(StringBuilder builder, Map<String, String> headers) {
         for (Map.Entry<String, String> e : headers.entrySet()) {
-            writeHeaderLine(writer, e.getKey(), e.getValue());
+            writeHeaderLine(builder, e.getKey(), e.getValue());
         }
     }
 
-    protected Writer getWriterFromSocket(Socket socket) throws IOException {
-        return new BufferedWriter(new OutputStreamWriter(socket.getOutputStream()));
+    protected StringBuilder writeLastHeaderLine(StringBuilder builder, String key, Object value) {
+        return writeHeaderLine(builder, key, value).append("\r\n");
     }
 
-    protected Writer writeLastHeaderLine(Writer writer, String key, Object value) throws IOException {
-        return writeHeaderLine(writer, key, value).append("\r\n");
-    }
-
-    protected Writer writeHeaderLine(Writer writer, String key, Object value) throws IOException {
-        return writer.append(key).append(": ").append(String.valueOf(value)).append("\r\n");
+    protected StringBuilder writeHeaderLine(StringBuilder builder, String key, Object value) {
+        return builder.append(key).append(": ").append(value).append("\r\n");
     }
 }

@@ -1,48 +1,67 @@
 /*
- *    Copyright 2016 Infuzion
+ * Copyright 2020 Srikavin Ramkumar
  *
- *    Licensed under the Apache License, Version 2.0 (the "License");
- *    you may not use this file except in compliance with the License.
- *    You may obtain a copy of the License at
+ * Licensed under the Apache License, Version 2.0 (the "License");
+ * you may not use this file except in compliance with the License.
+ * You may obtain a copy of the License at
  *
- *        http://www.apache.org/licenses/LICENSE-2.0
+ *     http://www.apache.org/licenses/LICENSE-2.0
  *
- *    Unless required by applicable law or agreed to in writing, software
- *    distributed under the License is distributed on an "AS IS" BASIS,
- *    WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
- *    See the License for the specific language governing permissions and
- *    limitations under the License.
+ * Unless required by applicable law or agreed to in writing, software
+ * distributed under the License is distributed on an "AS IS" BASIS,
+ * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+ * See the License for the specific language governing permissions and
+ * limitations under the License.
  */
 
 package me.infuzion.web.server.event;
 
+import com.google.common.flogger.FluentLogger;
 import me.infuzion.web.server.EventListener;
 import me.infuzion.web.server.event.def.FragmentedWebSocketEvent;
 import me.infuzion.web.server.event.def.PageRequestEvent;
 import me.infuzion.web.server.event.def.WebSocketEvent;
 import me.infuzion.web.server.event.def.WebSocketMessageEvent;
 import me.infuzion.web.server.event.reflect.*;
-import me.infuzion.web.server.listener.RedirectListener;
-import me.infuzion.web.server.listener.StatusListener;
+import me.infuzion.web.server.event.reflect.param.DefaultTypeConverter;
+import me.infuzion.web.server.event.reflect.param.ParameterGenerator;
 import me.infuzion.web.server.listener.WebSocketListener;
 import me.infuzion.web.server.router.EventRoute;
+import me.infuzion.web.server.router.Router;
+import me.infuzion.web.server.router.def.DefaultRouter;
 
-import java.lang.annotation.Annotation;
 import java.lang.reflect.Method;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.Map;
 
 public class EventManager {
+    private static final FluentLogger logger = FluentLogger.forEnclosingClass();
 
-    private List<Class<? extends Event>> eventTypes = new ArrayList<>();
+    private final List<Listener> listeners = new ArrayList<>();
+
+    private final List<Class<? extends Event>> eventTypes = new ArrayList<>();
+    private final List<EventRouterEntry<?>> eventRouters = new ArrayList<>();
+
+    public void fireEvent(Event event) throws Exception {
+        for (Listener listener : listeners) {
+            if (listener.getEvent().equals(event.getClass()) && listener.getControl() == EventControl.FULL) {
+                logger.atFiner().log("Calling %s for %s", listener.getEventListener().getClass().getName(), event.getName());
+                if (callListener(event, listener)) {
+                    return;
+                }
+            }
+        }
+        fireEvent(event, EventPriority.START);
+        fireEvent(event, EventPriority.NORMAL);
+        fireEvent(event, EventPriority.MONITOR);
+        fireEvent(event, EventPriority.END);
+    }
 
     public EventManager() {
         /* MUST BE BEFORE REGISTERING ANY LISTENERS */
         registerDefaultEventTypes();
         /* ---------------------------------------- */
-        new StatusListener(this);
-        new RedirectListener(this);
         new WebSocketListener(this);
 //        new JPLExecutor(this);
     }
@@ -54,51 +73,60 @@ public class EventManager {
         registerEvent(WebSocketMessageEvent.class);
     }
 
-    public void fireEvent(Event event) {
-        try {
-            for (Listener listener : HandlerList.getAllListeners()) {
-                if (listener.getEvent().equals(event.getClass()) && listener.getControl() == EventControl.FULL) {
-                    if (callListener(event, listener)) {
-                        return;
-                    }
-                }
-            }
-            fireEvent(event, EventPriority.START);
-            fireEvent(event, EventPriority.NORMAL);
-            fireEvent(event, EventPriority.MONITOR);
-            fireEvent(event, EventPriority.END);
-        } catch (Exception e) {
-            e.printStackTrace();
-        }
-    }
-
     private boolean callListener(Event event, Listener listener) throws Exception {
-        Object o = listener.getListenerMethod().invoke(listener.getEventListener(), (Object) event);
+        logger.atFiner().log("Calling method %s for %s", listener.getListenerMethod(), event);
+        Object o = listener.getListenerMethod().invoke(listener.getEventListener(), event);
         return o instanceof Boolean && (boolean) o;
     }
 
-    private void callListener(Event event, Listener listener, Map<String, String> dynSeg) throws Exception {
-        listener.getListenerMethod().invoke(listener.getEventListener(), event, dynSeg);
+    private void callRoutableListener(RequestEvent event, Listener listener) throws Exception {
+        EventRoute route = listener.getRoute();
+
+        //noinspection rawtypes
+        Router r = new DefaultRouter();
+        for (EventRouterEntry<?> eventRouter : eventRouters) {
+            if (eventRouter.event.equals(event.getClass())) {
+                r = eventRouter.router;
+                break;
+            }
+        }
+
+        for (EventRouterEntry<?> e : eventRouters) {
+            if (e.event.equals(event.getClass())) {
+                r = e.router;
+            }
+        }
+
+        //noinspection unchecked
+        Map<String, String> dynSeg = r.parseDynamicSegments(route.getPath(), event);
+
+        if (dynSeg == null) {
+            return;
+        }
+
+        Method m = listener.getListenerMethod();
+        ParameterGenerator parameters = listener.getParameters();
+
+        Object[] params = parameters.generateMethodParameters(event, dynSeg);
+        logger.atFiner().log("Calling routable method %s for %s", m, event);
+
+        Object ret = m.invoke(listener.getEventListener(), params);
+
+        if (listener.shouldHandleReturnValue()) {
+            parameters.handleReturnValue(event, ret);
+        }
     }
 
     private void fireEvent(Event event, EventPriority priority) throws Exception {
-        try {
-            for (Listener listener : HandlerList.getAllListeners()) {
-                if (listener.getEvent().equals(event.getClass()) && listener.getPriority().equals(priority)) {
-                    EventRoute route = listener.getRoute();
-                    if (route != null && listener.isDynamicRouting()) {
-                        Map<String, String> dynSeg = event.getRouter().parseDynamicSegments(route.getPath(), route.getMethods());
-                        if (dynSeg != null) {
-                            callListener(event, listener, dynSeg);
-                        }
-                        continue;
-                    }
-//                    System.out.println("Calling " + listener.getListenerMethod().getDeclaringClass() + " - " + listener.getListenerMethod().getName());
-                    callListener(event, listener);
-                }
+        for (Listener listener : listeners) {
+            if (event instanceof RequestEvent && listener.getRoute() != null) {
+                callRoutableListener((RequestEvent) event, listener);
+                continue;
             }
-        } catch (Exception e) {
-            e.printStackTrace();
+
+            if (listener.getEvent().equals(event.getClass()) && listener.getPriority().equals(priority)) {
+                callListener(event, listener);
+            }
         }
     }
 
@@ -106,60 +134,65 @@ public class EventManager {
         Method[] methods = listener.getClass().getDeclaredMethods();
 
         for (Method method : methods) {
-            Annotation annotation = method.getAnnotation(EventHandler.class);
+            EventHandler annotation = method.getAnnotation(EventHandler.class);
             Route route = method.getAnnotation(Route.class);
             if (annotation == null) {
                 continue;
             }
 
-            if (method.getParameterCount() != 1 && method.getParameterCount() != 2) {
-                System.out.println("Invalid method declared: " + method.getDeclaringClass().getName() + " - " + method.getName());
-                continue;
-            }
-
             EventRoute routeObj = null;
-            boolean dyanmicRouting = false;
+
             if (route != null) {
-                routeObj = new EventRoute(route.path(), route.methods());
-                dyanmicRouting = true;
+                routeObj = new EventRoute(route.value(), route.methods());
             }
 
 
-            EventPriority priority = ((EventHandler) annotation).priority();
-            EventControl control = ((EventHandler) annotation).control();
+            EventPriority priority = annotation.priority();
+            EventControl control = annotation.control();
 
             method.setAccessible(true);
-            Class listenerMethodClass = method.getParameterTypes()[0];
+            Class<?> listenerMethodClass = method.getParameterTypes()[0];
 
-            if (method.getParameterCount() == 1) {
-                System.out.println(
-                        "Method " + method.getDeclaringClass().getName() + " - " + method.getName()
-                                + " cannot use dynamic routes." +
-                                "Second param needs to be of type Map<String, String>");
-                dyanmicRouting = false;
+            // Only events that extend RequestEvent can be
+            if (!RequestEvent.class.isAssignableFrom(listenerMethodClass)) {
                 routeObj = null;
             }
 
-            if (Event.class.isAssignableFrom(listenerMethodClass)) {
+            boolean handleReturnValue = false;
 
+            if (!method.getReturnType().equals(Void.TYPE)) {
+                handleReturnValue = true;
+            }
+
+            // Check if listenerMethodClass extends Event
+            if (Event.class.isAssignableFrom(listenerMethodClass)) {
+                // Check that the event has been registered
                 for (Class<? extends Event> eventType : eventTypes) {
                     if (listenerMethodClass.isAssignableFrom(eventType)) {
-                        if (dyanmicRouting) {
-                            Class dynamicSegments = method.getParameterTypes()[1];
-                            if (!dynamicSegments.equals(Map.class)) {
-                                routeObj = null;
-                                System.out.println(
-                                        "Method " + method.getDeclaringClass().getName() + " - " + method.getName()
-                                                + " cannot use dynamic routes." +
-                                                "Second param needs to be of type Map<String, String>");
-                            }
-                        }
-                        Event.getHandler().addListener(
-                                new Listener(priority, eventType, method, listener, control, routeObj, dyanmicRouting));
+                        ParameterGenerator parameters = new ParameterGenerator(new DefaultTypeConverter(), method);
+
+                        logger.atInfo().log("New event listener registered (%s) for %s", method, eventType);
+
+                        listeners.add(
+                                new Listener(priority, eventType, method, listener, control, routeObj, parameters, handleReturnValue));
 
                     }
                 }
             }
+        }
+    }
+
+    public <T extends RequestEvent> void registerEventRouter(Class<T> event, Router<T> router) {
+        eventRouters.add(new EventRouterEntry<>(event, router));
+    }
+
+    private static class EventRouterEntry<K extends RequestEvent> {
+        Class<K> event;
+        Router<K> router;
+
+        public EventRouterEntry(Class<K> event, Router<K> router) {
+            this.event = event;
+            this.router = router;
         }
     }
 

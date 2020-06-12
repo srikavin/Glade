@@ -1,61 +1,47 @@
+/*
+ * Copyright 2020 Srikavin Ramkumar
+ *
+ * Licensed under the Apache License, Version 2.0 (the "License");
+ * you may not use this file except in compliance with the License.
+ * You may obtain a copy of the License at
+ *
+ *     http://www.apache.org/licenses/LICENSE-2.0
+ *
+ * Unless required by applicable law or agreed to in writing, software
+ * distributed under the License is distributed on an "AS IS" BASIS,
+ * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+ * See the License for the specific language governing permissions and
+ * limitations under the License.
+ */
+
 package me.infuzion.web.server.router.def;
 
-import me.infuzion.web.server.router.RouteMethod;
+import me.infuzion.web.server.event.RequestEvent;
 import me.infuzion.web.server.router.Router;
-import me.infuzion.web.server.util.HTTPMethod;
-import org.apache.commons.lang3.ArrayUtils;
-import org.apache.commons.lang3.StringUtils;
+import org.jetbrains.annotations.NotNull;
+import org.jetbrains.annotations.Nullable;
 
 import java.util.HashMap;
 import java.util.Map;
 
-public class DefaultRouter implements Router {
-
-    private final String visitedPath;
-    private final RouteMethod method;
-
-    public DefaultRouter(String visitedPath, HTTPMethod hMethod) {
-        this.visitedPath = visitedPath;
-        method = RouteMethod.valueOf(hMethod.name());
-    }
-
-    public static void main(String[] args) {
-        DefaultRouter r = new DefaultRouter("/user/123/123as", HTTPMethod.GET);
-        Map<String, String> s = r.parseDynamicSegments("/user/:user_id/:j123as", RouteMethod.GET);
-        System.out.println(s);
-    }
-
-    /**
-     * @param routePath The path expected for the route
-     */
+public class DefaultRouter implements Router<RequestEvent> {
     @Override
-    public Map<String, String> parseDynamicSegments(String routePath, RouteMethod... rMethod) {
+    public @Nullable Map<String, String> parseDynamicSegments(@NotNull String routePath, @NotNull RequestEvent event) {
         // "/user/:user_id"
         // "/user/asdbawe"
-
-        if (!ArrayUtils.contains(rMethod, RouteMethod.ANY) && !ArrayUtils.contains(rMethod, method)) {
-            return null;
-        }
-
-        String[] routePathSplit = routePath.split("/");
-        String[] visitedPathSplit = visitedPath.split("/");
-
-        int routeSlashCount = StringUtils.countMatches(routePath, '/');
-        int visitedSlashCount = StringUtils.countMatches(visitedPath, '/');
-
-        if (routeSlashCount != visitedSlashCount) {
-            return null;
-        }
-
-        if (routePathSplit.length != visitedPathSplit.length) {
-            return null;
-        }
 
         if (routePath.equalsIgnoreCase("*")) {
             return new HashMap<>();
         }
 
+        String[] routePathSplit = routePath.split("/");
+        String[] visitedPathSplit = event.getPath().split("/");
+
         Map<String, String> toRet = new HashMap<>();
+
+        if (routePathSplit.length != visitedPathSplit.length) {
+            return null;
+        }
 
         for (int i = 0; i < routePathSplit.length; i++) {
             String curRoute = routePathSplit[i];

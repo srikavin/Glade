@@ -14,20 +14,30 @@
  * limitations under the License.
  */
 
-package me.infuzion.web.server.event.reflect;
-
-import me.infuzion.web.server.router.RouteMethod;
+package me.infuzion.web.server.event.reflect.param;
 
 import java.lang.annotation.ElementType;
 import java.lang.annotation.Retention;
 import java.lang.annotation.RetentionPolicy;
 import java.lang.annotation.Target;
 
+/**
+ * Used to denote that the return value should be set as the return value of this method.
+ */
 @Target(ElementType.METHOD)
 @Retention(RetentionPolicy.RUNTIME)
-public @interface Route {
-    String value();
+public @interface Response {
+    String UNALTERED_CONTENT_TYPE = "$glade_unaltered_content_type";
 
-    RouteMethod[] methods() default {RouteMethod.GET};
+    /**
+     * @return Indicates whether the value should be processed by a type adapter (e.g. to convert to JSON).
+     */
+    boolean raw() default false;
 
+    /**
+     * By default, the content type will not be changed from the set value.
+     *
+     * @return The content type to set on the response.
+     */
+    String value() default UNALTERED_CONTENT_TYPE;
 }
