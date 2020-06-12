@@ -28,7 +28,14 @@ public class UrlEncodedBodyParser implements BodyParser {
 
     @Override
     public boolean matches(HttpRequest request, ByteBuffer body) {
-        return request.getHeaders().get("content-type").contains("application/x-www-form-urlencoded");
+        String contentType = request.getHeaders().get("content-type");
+
+        if (contentType == null) {
+            return false;
+        }
+
+
+        return contentType.contains("application/x-www-form-urlencoded");
     }
 
     @Override

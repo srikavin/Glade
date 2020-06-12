@@ -155,6 +155,10 @@ public class ParameterGenerator {
 
         BodyData.BodyField field = bodyData.getFields().get(e.id);
 
+        if (field == null) {
+            return null;
+        }
+
         if (e.raw) {
             return field;
         }

@@ -88,7 +88,13 @@ public class MultipartBodyParser implements BodyParser {
 
     @Override
     public boolean matches(HttpRequest request, ByteBuffer body) {
-        return request.getHeaders().get("content-type").contains("multipart/form-data");
+        String contentType = request.getHeaders().get("content-type");
+
+        if (contentType == null) {
+            return false;
+        }
+
+        return contentType.contains("multipart/form-data");
     }
 
     @Override
