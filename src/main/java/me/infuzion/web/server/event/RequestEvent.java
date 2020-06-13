@@ -16,6 +16,7 @@
 
 package me.infuzion.web.server.event;
 
+import me.infuzion.web.server.http.HttpMethod;
 import me.infuzion.web.server.http.parser.BodyData;
 import me.infuzion.web.server.util.HttpParameters;
 
@@ -25,6 +26,8 @@ import java.nio.ByteBuffer;
  * Implementing events can be used with dynamic URL-based routing.
  */
 public interface RequestEvent {
+    HttpMethod getHttpMethod();
+
     /**
      * @return The relative path for this request.
      */

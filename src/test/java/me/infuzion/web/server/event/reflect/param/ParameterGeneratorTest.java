@@ -19,6 +19,7 @@ package me.infuzion.web.server.event.reflect.param;
 import me.infuzion.web.server.event.RequestEvent;
 import me.infuzion.web.server.event.def.PageRequestEvent;
 import me.infuzion.web.server.event.reflect.Route;
+import me.infuzion.web.server.http.HttpMethod;
 import me.infuzion.web.server.http.parser.BodyData;
 import me.infuzion.web.server.util.HttpParameters;
 import org.junit.jupiter.api.Test;
@@ -63,6 +64,11 @@ class ParameterGeneratorTest {
     }
 
     static class MockRequestEvent implements RequestEvent {
+        @Override
+        public HttpMethod getHttpMethod() {
+            return HttpMethod.GET;
+        }
+
         @Override
         public String getPath() {
             return "/asd/ksd";

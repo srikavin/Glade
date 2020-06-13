@@ -49,6 +49,7 @@ public class PageRequestEvent extends Event implements RequestEvent {
         this.queryParams = new HttpParameters(Utilities.parseQuery(request.getQuery()));
     }
 
+    @Override
     public HttpMethod getHttpMethod() {
         return request.getMethod();
     }

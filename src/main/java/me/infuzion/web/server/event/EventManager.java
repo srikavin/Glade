@@ -84,6 +84,10 @@ public class EventManager {
     private void callRoutableListener(RequestEvent event, Listener listener) throws Exception {
         EventRoute route = listener.getRoute();
 
+        if (!route.getMethods().contains(event.getHttpMethod())) {
+            return;
+        }
+
         //noinspection rawtypes
         Router r = new DefaultRouter();
         for (EventRouterEntry<?> eventRouter : eventRouters) {
