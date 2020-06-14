@@ -26,7 +26,6 @@ import me.infuzion.web.server.event.def.WebSocketMessageEvent;
 import me.infuzion.web.server.event.reflect.*;
 import me.infuzion.web.server.event.reflect.param.DefaultTypeConverter;
 import me.infuzion.web.server.event.reflect.param.ParameterGenerator;
-import me.infuzion.web.server.listener.WebSocketListener;
 import me.infuzion.web.server.router.EventRoute;
 import me.infuzion.web.server.router.Router;
 import me.infuzion.web.server.router.def.DefaultRouter;
@@ -48,7 +47,7 @@ public class EventManager {
         logger.atFine().withStackTrace(StackSize.MEDIUM).log("Event %s fired", event);
         for (Listener listener : listeners) {
             if (listener.getEvent().equals(event.getClass()) && listener.getControl() == EventControl.FULL) {
-                logger.atFiner().log("Calling %s for %s", listener.getEventListener().getClass().getName(), event.getName());
+                logger.atFiner().log("Calling %s for %s with FULL control", listener.getEventListener().getClass().getName(), event.getName());
                 if (callListener(event, listener)) {
                     return;
                 }
@@ -64,7 +63,6 @@ public class EventManager {
         /* MUST BE BEFORE REGISTERING ANY LISTENERS */
         registerDefaultEventTypes();
         /* ---------------------------------------- */
-        new WebSocketListener(this);
 //        new JPLExecutor(this);
     }
 

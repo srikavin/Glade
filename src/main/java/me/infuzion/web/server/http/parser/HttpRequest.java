@@ -23,6 +23,7 @@ import org.jetbrains.annotations.Nullable;
 import java.nio.ByteBuffer;
 import java.nio.charset.StandardCharsets;
 import java.util.Map;
+import java.util.TreeMap;
 
 public class HttpRequest {
     @NotNull
@@ -42,7 +43,8 @@ public class HttpRequest {
         this.version = version;
         this.method = method;
         this.path = path;
-        this.headers = headers;
+        this.headers = new TreeMap<>(String.CASE_INSENSITIVE_ORDER);
+        this.headers.putAll(headers);
         this.body = body;
     }
 

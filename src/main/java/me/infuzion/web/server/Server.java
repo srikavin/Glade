@@ -21,44 +21,39 @@ import me.infuzion.web.server.event.EventManager;
 import me.infuzion.web.server.event.def.PageRequestEvent;
 import me.infuzion.web.server.event.reflect.EventHandler;
 import me.infuzion.web.server.event.reflect.EventPriority;
-import me.infuzion.web.server.http.parser.*;
-import me.infuzion.web.server.response.DefaultResponseGenerator;
-import me.infuzion.web.server.response.ResponseGenerator;
+import me.infuzion.web.server.listener.WebSocketListener;
+import me.infuzion.web.server.network.ConnectionHandler;
+import me.infuzion.web.server.network.HttpConnectionHandler;
+import me.infuzion.web.server.network.WebsocketConnectionHandler;
+import org.jetbrains.annotations.Nullable;
 
 import java.io.IOException;
 import java.net.InetSocketAddress;
-import java.nio.ByteBuffer;
 import java.nio.channels.SelectionKey;
 import java.nio.channels.Selector;
 import java.nio.channels.ServerSocketChannel;
 import java.nio.channels.SocketChannel;
-import java.util.*;
-import java.util.stream.Collectors;
+import java.util.Iterator;
+import java.util.Map;
+import java.util.Set;
+import java.util.UUID;
+import java.util.concurrent.ConcurrentHashMap;
 
 public class Server {
     public static final String version = "1.5.0";
     private static final FluentLogger logger = FluentLogger.forEnclosingClass();
-
-    public EventManager getEventManager() {
-        return eventManager;
-    }
-
-    private final HttpParser parser = new HttpParser();
+    private final EventManager eventManager;
     private final ServerSocketChannel serverSocketChannel;
-    private final Selector clientSelector;
-    private final Map<UUID, Client> clientMap = new HashMap<>();
-    private final EventManager eventManager = new EventManager();
-    private final ResponseGenerator defaultResponseGenerator = new DefaultResponseGenerator();
-    private final List<BodyParser> bodyParsers = new ArrayList<>();
+    private final Map<Class<? extends ConnectionHandler>, ConnectionHandler> connectionHandlers = new ConcurrentHashMap<>();
+    private Class<? extends ConnectionHandler> defaultHandler;
 
     public Server(InetSocketAddress address) throws IOException {
         logger.atInfo().log("Starting server at %s", address);
-        clientSelector = Selector.open();
-
         serverSocketChannel = ServerSocketChannel.open();
         serverSocketChannel.bind(address);
         serverSocketChannel.configureBlocking(false);
-        serverSocketChannel.register(clientSelector, SelectionKey.OP_ACCEPT);
+
+        eventManager = new EventManager();
 
         eventManager.registerListener(new EventListener() {
             @EventHandler(priority = EventPriority.MONITOR)
@@ -67,103 +62,53 @@ public class Server {
             }
         });
 
-        bodyParsers.add(new MultipartBodyParser());
-        bodyParsers.add(new UrlEncodedBodyParser());
-        bodyParsers.add(new JsonBodyParser());
+        eventManager.registerListener(new WebSocketListener());
+
+        registerConnectionHandler(new HttpConnectionHandler());
+        registerConnectionHandler(new WebsocketConnectionHandler());
+
+        setDefaultConnectionHandler(HttpConnectionHandler.class);
     }
 
-    private void handleRead(SelectionKey key, SocketChannel clientChannel, Client client) throws Exception {
-        if (client.buffer == null) {
-            client.buffer = ByteBuffer.allocate(1024 * 1024 * 32);
-        }
-        int numRead = clientChannel.read(client.buffer);
-
-        if (numRead == -1) {
-            clientChannel.close();
-            key.cancel();
-            return;
-        }
-
-        HttpRequest request = parser.parse(client.buffer);
-
-        if (request == null) {
-            clientChannel.register(clientSelector, SelectionKey.OP_READ, client.uuid);
-            return;
-        }
-
-        BodyData bodyData = new BodyData(Collections.emptyMap());
-        if (request.getRawBody() != null) {
-            ByteBuffer raw = request.getRawBody();
-            for (BodyParser parser : bodyParsers) {
-                if (parser.matches(request, raw)) {
-                    bodyData = parser.parse(request, raw);
-                    break;
-                }
-            }
-        }
-
-        PageRequestEvent event = new PageRequestEvent(request, bodyData);
-        event.setResponseGenerator(defaultResponseGenerator);
-        eventManager.fireEvent(event);
-
-
-        ResponseGenerator generator = event.getResponseGenerator();
-        ByteBuffer response = generator.generateResponse(event);
-
-        client.headersToWrite = null;
-        client.bodyToWrite = null;
-        client.buffer = null;
-
-        if (response == null) {
-            clientChannel.register(clientSelector, SelectionKey.OP_READ, client.uuid);
-            return;
-        }
-
-        client.headersToWrite = response;
-
-        if (generator.shouldCopyBody(event) && event.getResponse().getBody() != null) {
-            client.bodyToWrite = event.getResponse().getBody();
-        }
-
-        clientChannel.register(clientSelector, SelectionKey.OP_WRITE, client.uuid);
+    public EventManager getEventManager() {
+        return eventManager;
     }
 
-    private void handleWrite(SelectionKey key, SocketChannel clientChannel, Client client) throws IOException {
-        if (client.headersToWrite != null) {
-            clientChannel.write(client.headersToWrite);
+    public void setDefaultConnectionHandler(Class<? extends ConnectionHandler> handler) {
+        defaultHandler = handler;
+    }
 
-            if (client.headersToWrite.limit() == client.headersToWrite.position()) {
-                client.headersToWrite = null;
-            }
-        }
+    public void registerConnectionHandler(ConnectionHandler handler) throws IOException {
+        Selector clientSelector = Selector.open();
 
-        if (client.headersToWrite == null && client.bodyToWrite != null) {
-            clientChannel.write(client.bodyToWrite);
+        serverSocketChannel.register(clientSelector, SelectionKey.OP_ACCEPT);
+        handler.init(this, eventManager, clientSelector);
 
-            if (client.bodyToWrite.limit() == client.bodyToWrite.position()) {
-                client.bodyToWrite = null;
-            }
-        }
+        connectionHandlers.put(handler.getClass(), handler);
+    }
 
-        if (client.headersToWrite == null && client.bodyToWrite == null) {
-            clientChannel.register(clientSelector, SelectionKey.OP_READ, client.uuid);
-        } else {
-            clientChannel.register(clientSelector, SelectionKey.OP_WRITE, client.uuid);
-        }
+    public @Nullable ConnectionHandler getConnectionHandler(Class<? extends ConnectionHandler> handler) {
+        return connectionHandlers.get(handler);
     }
 
     public void start() throws IOException {
-        while (true) {
-            Set<UUID> clientsUUIDS = clientSelector.keys().stream().map(e -> (UUID) e.attachment()).collect(Collectors.toSet());
-            clientMap.entrySet().removeIf(next -> !clientsUUIDS.contains(next.getKey()));
+        for (ConnectionHandler e : connectionHandlers.values()) {
+            Thread t = new Thread(e);
+            t.setName("Connection Handler: " + e.getClass());
+            t.start();
+        }
 
-            int readyCount = clientSelector.select();
+        Selector selector = Selector.open();
+        serverSocketChannel.register(selector, SelectionKey.OP_ACCEPT);
+
+        while (true) {
+            int readyCount = selector.select();
 
             if (readyCount == 0) {
                 continue;
             }
 
-            Set<SelectionKey> ready = clientSelector.selectedKeys();
+            Set<SelectionKey> ready = selector.selectedKeys();
             Iterator<SelectionKey> iterator = ready.iterator();
 
             while (iterator.hasNext()) {
@@ -171,66 +116,23 @@ public class Server {
                 iterator.remove();
 
                 if (!key.isValid()) {
-                    UUID uuid = (UUID) key.attachment();
-                    clientMap.remove(uuid);
                     key.cancel();
                     continue;
                 }
 
                 if (key.isAcceptable()) {
-                    UUID uuid = UUID.randomUUID();
-                    clientMap.put(uuid, new Client(uuid));
-
                     try {
+                        UUID uuid = UUID.randomUUID();
                         ServerSocketChannel server = (ServerSocketChannel) key.channel();
                         SocketChannel client = server.accept();
-
                         client.configureBlocking(false);
 
-                        key.attach(uuid);
-
-                        client.register(clientSelector, SelectionKey.OP_READ | SelectionKey.OP_WRITE, uuid);
+                        connectionHandlers.get(defaultHandler).register(client, uuid);
                     } catch (Exception e) {
-                        logger.atWarning().withCause(e).log("Exception occurred %s", e);
-                        clientMap.remove(uuid);
                         key.cancel();
                     }
-                    continue;
-                }
-
-
-                SocketChannel client = (SocketChannel) key.channel();
-                UUID uuid = (UUID) key.attachment();
-                Client c = clientMap.get(uuid);
-
-                try {
-                    if (key.isValid() && key.isReadable()) {
-                        handleRead(key, client, c);
-                    }
-                    if (key.isValid() && key.isWritable()) {
-                        handleWrite(key, client, c);
-                    }
-                } catch (Exception e) {
-                    logger.atWarning().withCause(e).log("Exception occurred %s", e);
-                    clientMap.remove(uuid);
-                    client.close();
-                    key.cancel();
                 }
             }
         }
-    }
-
-    private static class Client {
-        ByteBuffer buffer = null;
-
-        UUID uuid;
-
-        ByteBuffer headersToWrite = null;
-        ByteBuffer bodyToWrite = null;
-
-        public Client(UUID uuid) {
-            this.uuid = uuid;
-        }
-
     }
 }

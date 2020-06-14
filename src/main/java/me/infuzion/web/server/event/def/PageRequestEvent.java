@@ -22,6 +22,7 @@ import me.infuzion.web.server.http.HttpMethod;
 import me.infuzion.web.server.http.HttpResponse;
 import me.infuzion.web.server.http.parser.BodyData;
 import me.infuzion.web.server.http.parser.HttpRequest;
+import me.infuzion.web.server.network.ConnectionHandler;
 import me.infuzion.web.server.util.HttpParameters;
 import me.infuzion.web.server.util.Utilities;
 import org.jetbrains.annotations.NotNull;
@@ -41,6 +42,7 @@ public class PageRequestEvent extends Event implements RequestEvent {
     private final @NotNull HttpParameters queryParams;
 
     private final @NotNull HttpResponse response;
+    private Class<? extends ConnectionHandler> connectionHandler;
 
     public PageRequestEvent(@NotNull HttpRequest request, @NotNull BodyData bodyData) {
         this.request = request;
@@ -99,5 +101,13 @@ public class PageRequestEvent extends Event implements RequestEvent {
 
     public @NotNull HttpResponse getResponse() {
         return response;
+    }
+
+    public @NotNull Class<? extends ConnectionHandler> getConnectionHandler() {
+        return connectionHandler;
+    }
+
+    public void setConnectionHandler(@NotNull Class<? extends ConnectionHandler> connectionHandler) {
+        this.connectionHandler = connectionHandler;
     }
 }

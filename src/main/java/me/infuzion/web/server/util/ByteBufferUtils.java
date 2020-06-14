@@ -57,4 +57,27 @@ public class ByteBufferUtils {
 
         return new String(strData, 0, strData.length, StandardCharsets.UTF_8);
     }
+
+    /**
+     * Returns an array representing the buffer's content. The array may be the backing array of the byte buffer if it
+     * is supported; otherwise, it will be a copy of the bytebuffer.
+     *
+     * @param buffer The buffer to get an array representation of
+     * @return An array containing the contents of the given byte buffer
+     */
+    public static byte[] getAsArray(ByteBuffer buffer) {
+        if (buffer.hasArray()) {
+            return buffer.array();
+        }
+
+        byte[] array = new byte[buffer.limit()];
+
+        int savedPosition = buffer.position();
+
+        buffer.position(0);
+        buffer.get(array);
+        buffer.position(savedPosition);
+
+        return array;
+    }
 }

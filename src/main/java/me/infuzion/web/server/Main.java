@@ -16,6 +16,11 @@
 
 package me.infuzion.web.server;
 
+import me.infuzion.web.server.event.def.PageRequestEvent;
+import me.infuzion.web.server.event.reflect.EventHandler;
+import me.infuzion.web.server.event.reflect.Route;
+import me.infuzion.web.server.event.reflect.param.Response;
+
 import java.io.IOException;
 import java.net.InetSocketAddress;
 
@@ -29,7 +34,15 @@ public class Main {
     }
 
     public static void main(String[] args) throws IOException {
-        Server server = new Server(new InetSocketAddress("0.0.0.0", 8971));
+        Server server = new Server(new InetSocketAddress("0.0.0.0", 9001));
+        server.getEventManager().registerListener(new EventListener() {
+            @EventHandler
+            @Route("*")
+            @Response
+            public String a(PageRequestEvent event) {
+                return "TEST";
+            }
+        });
         server.start();
     }
 }
