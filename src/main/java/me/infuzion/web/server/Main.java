@@ -34,7 +34,11 @@ public class Main {
     }
 
     public static void main(String[] args) throws IOException {
-        Server server = new Server(new InetSocketAddress("0.0.0.0", 9001));
+        int port = 9001;
+        if (args.length == 1) {
+            port = Integer.parseInt(args[0]);
+        }
+        Server server = new Server(new InetSocketAddress("0.0.0.0", port));
         server.getEventManager().registerListener(new EventListener() {
             @EventHandler
             @Route("*")

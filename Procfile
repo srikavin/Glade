@@ -1,1 +1,1 @@
-web: mvn clean compile exec:java
+web: java $JAVA_OPTS -cp target/classes:target/dependency/* me.infuzion.web.server.Main $PORT
