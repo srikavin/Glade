@@ -24,7 +24,7 @@ import me.infuzion.web.server.event.reflect.EventPriority;
 import me.infuzion.web.server.listener.WebSocketListener;
 import me.infuzion.web.server.network.ConnectionHandler;
 import me.infuzion.web.server.network.HttpConnectionHandler;
-import me.infuzion.web.server.network.WebsocketConnectionHandler;
+import me.infuzion.web.server.network.websocket.WebsocketConnectionHandler;
 import org.jetbrains.annotations.Nullable;
 
 import java.io.IOException;

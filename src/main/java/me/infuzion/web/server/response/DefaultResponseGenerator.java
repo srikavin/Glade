@@ -50,7 +50,7 @@ public class DefaultResponseGenerator implements ResponseGenerator {
         writeHeaderLine(generated, "Content-Length", (rawResponse != null ? rawResponse.limit() : 0));
         writeHeaderLine(generated, "Connection", "Keep-Alive");
         writeHeaderLine(generated, "Keep-Alive", "timeout=5, max=1000");
-        writeHeaderLine(generated, "X-Powered-By: Glade v", Server.version);
+        writeHeaderLine(generated, "Server", "Glade v" + Server.version);
         writeHeaders(generated, headers);
 
         long elapsedTime = System.nanoTime() - lastRequestTime;

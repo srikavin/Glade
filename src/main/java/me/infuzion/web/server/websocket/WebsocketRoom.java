@@ -14,9 +14,10 @@
  * limitations under the License.
  */
 
-package me.infuzion.web.server.event.def;
+package me.infuzion.web.server.websocket;
 
-import me.infuzion.web.server.event.Event;
+import java.util.List;
 
-public abstract class WebSocketEvent extends Event {
+public class WebsocketRoom {
+    List<WebsocketClient> clients;
 }

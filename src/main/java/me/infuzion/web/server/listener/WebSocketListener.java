@@ -23,7 +23,7 @@ import me.infuzion.web.server.event.reflect.EventHandler;
 import me.infuzion.web.server.event.reflect.EventPriority;
 import me.infuzion.web.server.http.HttpMethod;
 import me.infuzion.web.server.http.HttpResponse;
-import me.infuzion.web.server.network.WebsocketConnectionHandler;
+import me.infuzion.web.server.network.websocket.WebsocketConnectionHandler;
 import me.infuzion.web.server.response.ResponseGenerator;
 import me.infuzion.web.server.response.WebSocketResponseGenerator;
 

@@ -19,10 +19,8 @@ package me.infuzion.web.server.event;
 import com.google.common.flogger.FluentLogger;
 import com.google.common.flogger.StackSize;
 import me.infuzion.web.server.EventListener;
-import me.infuzion.web.server.event.def.FragmentedWebSocketEvent;
 import me.infuzion.web.server.event.def.PageRequestEvent;
 import me.infuzion.web.server.event.def.WebSocketEvent;
-import me.infuzion.web.server.event.def.WebSocketMessageEvent;
 import me.infuzion.web.server.event.reflect.*;
 import me.infuzion.web.server.event.reflect.param.DefaultTypeConverter;
 import me.infuzion.web.server.event.reflect.param.ParameterGenerator;
@@ -69,8 +67,6 @@ public class EventManager {
     private void registerDefaultEventTypes() {
         registerEvent(PageRequestEvent.class);
         registerEvent(WebSocketEvent.class);
-        registerEvent(FragmentedWebSocketEvent.class);
-        registerEvent(WebSocketMessageEvent.class);
     }
 
     private boolean callListener(Event event, Listener listener) throws Exception {

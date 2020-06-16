@@ -29,6 +29,17 @@ public class Utilities {
         return toRet;
     }
 
+    public static int[] convertUnsignedByteArrayToIntArray(byte[] input) {
+        if (input == null) {
+            return null;
+        }
+        int[] ret = new int[input.length];
+        for (int i = 0; i < input.length; i++) {
+            ret[i] = input[i] & 0xff; // Range 0 to 255, not -128 to 127
+        }
+        return ret;
+    }
+
     public static Map<String, List<String>> splitQuery(URL url) {
         final Map<String, List<String>> query_pairs = new LinkedHashMap<>();
         if (url.getQuery() == null) {

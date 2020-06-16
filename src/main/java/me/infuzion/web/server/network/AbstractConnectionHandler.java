@@ -93,6 +93,7 @@ public abstract class AbstractConnectionHandler implements ConnectionHandler {
                     }
                 } catch (Exception e) {
                     logger.atWarning().withCause(e).log("Exception occurred");
+                    clients.remove(uuid);
                     client.close();
                     key.cancel();
                 }

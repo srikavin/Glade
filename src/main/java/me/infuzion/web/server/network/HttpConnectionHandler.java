@@ -63,6 +63,8 @@ public class HttpConnectionHandler extends AbstractConnectionHandler {
         if (numRead == -1) {
             clientChannel.close();
             key.cancel();
+            clients.remove(uuid);
+            clientMap.remove(uuid);
             return;
         }
 

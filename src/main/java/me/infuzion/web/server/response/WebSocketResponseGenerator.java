@@ -16,6 +16,7 @@
 
 package me.infuzion.web.server.response;
 
+import me.infuzion.web.server.Server;
 import me.infuzion.web.server.event.Event;
 import me.infuzion.web.server.event.def.PageRequestEvent;
 
@@ -35,8 +36,10 @@ public class WebSocketResponseGenerator extends DefaultResponseGenerator {
         generated.append("HTTP/1.1 101 Switching Protocols\r\n");
         writeHeaderLine(generated, "Upgrade", "websocket");
         writeHeaderLine(generated, "Connection", "Upgrade");
+        writeHeaderLine(generated, "Server", "Glade v" + Server.version);
         writeHeaders(generated, pEvent.getResponse().getHeaders());
         writeLastHeaderLine(generated, "WebSocket", "WebSocket");
+
 
         return ByteBuffer.wrap(generated.toString().getBytes(StandardCharsets.UTF_8));
     }
