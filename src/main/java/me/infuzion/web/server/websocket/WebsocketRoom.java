@@ -17,7 +17,25 @@
 package me.infuzion.web.server.websocket;
 
 import java.util.List;
+import java.util.UUID;
 
 public class WebsocketRoom {
     List<WebsocketClient> clients;
+
+    public void addClient(WebsocketClient client) {
+
+    }
+
+    public void removeClient(UUID uuid) {
+    }
+
+    public void removeClient(WebsocketClient client) {
+        removeClient(client.getId());
+    }
+
+    public void sendToAll(String string) {
+        for (WebsocketClient client : clients) {
+            client.send(string);
+        }
+    }
 }

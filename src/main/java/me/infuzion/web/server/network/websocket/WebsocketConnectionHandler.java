@@ -36,12 +36,18 @@ import java.util.*;
  */
 public class WebsocketConnectionHandler extends AbstractConnectionHandler {
     private static final FluentLogger logger = FluentLogger.forEnclosingClass();
-    private final Map<UUID, WebsocketNetworkState> clientMap = Collections.synchronizedMap(new WeakHashMap<>());
+    private final Map<UUID, NetworkWebsocketClient> clientMap = Collections.synchronizedMap(new WeakHashMap<>());
     private final CharsetDecoder utf8Decoder = StandardCharsets.UTF_8.newDecoder();
 
     @Override
     protected void handleNewClient(SocketChannel client, UUID uuid) {
-        clientMap.put(uuid, new WebsocketNetworkState());
+        clientMap.put(uuid, new NetworkWebsocketClient(uuid));
+    }
+
+    @Override
+    protected void handleRemoveClient(UUID uuid) {
+        clientMap.remove(uuid);
+        // TODO: Send event
     }
 
     @Override
@@ -60,7 +66,7 @@ public class WebsocketConnectionHandler extends AbstractConnectionHandler {
           https://tools.ietf.org/html/rfc6455#section-5.2
         */
 
-        WebsocketNetworkState client = clientMap.get(uuid);
+        NetworkWebsocketClient client = clientMap.get(uuid);
 
 
         if (client == null) {
@@ -71,20 +77,20 @@ public class WebsocketConnectionHandler extends AbstractConnectionHandler {
             return;
         }
 
-        if (client.state == WebsocketNetworkState.WebsocketClientParserState.HEADER) {
+        if (client.state == NetworkWebsocketClient.WebsocketClientParserState.HEADER) {
             readHeader(client, clientChannel);
         }
 
-        if (client.state == WebsocketNetworkState.WebsocketClientParserState.PAYLOAD) {
+        if (client.state == NetworkWebsocketClient.WebsocketClientParserState.PAYLOAD) {
             readPayload(client, clientChannel);
         }
     }
 
-    private void writeCloseFrame(WebsocketFrameCloseCodes closeCode, WebsocketNetworkState client) {
+    private void writeCloseFrame(WebsocketFrameCloseCodes closeCode, NetworkWebsocketClient client) {
         writeCloseFrame(closeCode, null, client);
     }
 
-    private void writeCloseFrame(WebsocketFrameCloseCodes closeCode, @Nullable String additionalData, WebsocketNetworkState client) {
+    private void writeCloseFrame(WebsocketFrameCloseCodes closeCode, @Nullable String additionalData, NetworkWebsocketClient client) {
         ByteBuffer buffer;
         if (additionalData != null) {
             ByteBuffer encoded = StandardCharsets.UTF_8.encode(additionalData);
@@ -96,14 +102,14 @@ public class WebsocketConnectionHandler extends AbstractConnectionHandler {
             buffer.putShort(closeCode.value);
         }
         buffer.rewind();
-        writeFrame(WebsocketFrameOpcodes.CLOSE, buffer, client);
+        client.sendFrame(WebsocketFrameOpcodes.CLOSE, buffer);
 
         client.shouldClose = true;
     }
 
     @Override
     protected void handleWrite(SelectionKey key, UUID uuid, SocketChannel clientChannel) throws Exception {
-        WebsocketNetworkState client = clientMap.get(uuid);
+        NetworkWebsocketClient client = clientMap.get(uuid);
 
         ByteBuffer buffer = client.writeBuffer.peek();
 
@@ -117,6 +123,7 @@ public class WebsocketConnectionHandler extends AbstractConnectionHandler {
         }
 
         if (client.writeBuffer.isEmpty() && client.shouldClose) {
+            client.reset();
             clients.remove(uuid);
             key.channel().close();
             key.cancel();
@@ -172,7 +179,7 @@ public class WebsocketConnectionHandler extends AbstractConnectionHandler {
     /**
      * Handles reading the metadata of a websocket frame.
      */
-    private void readHeader(WebsocketNetworkState client, SocketChannel channel) throws IOException {
+    private void readHeader(NetworkWebsocketClient client, SocketChannel channel) throws IOException {
         if (client.readBuffer == null) {
             client.readBuffer = ByteBuffer.allocate(16);
             client.curFrame = new WebsocketFrameHeader();
@@ -237,13 +244,13 @@ public class WebsocketConnectionHandler extends AbstractConnectionHandler {
         }
 
         client.readBuffer = payload;
-        client.state = WebsocketNetworkState.WebsocketClientParserState.PAYLOAD;
+        client.state = NetworkWebsocketClient.WebsocketClientParserState.PAYLOAD;
     }
 
-    private void handleControlFrame(WebsocketFrameHeader header, ByteBuffer payload, WebsocketNetworkState client) {
+    private void handleControlFrame(WebsocketFrameHeader header, ByteBuffer payload, NetworkWebsocketClient client) {
         WebsocketFrameOpcodes opcode = header.opcode;
         if (opcode == WebsocketFrameOpcodes.PING) {
-            writeFrame(WebsocketFrameOpcodes.PONG, payload, client);
+            client.sendFrame(WebsocketFrameOpcodes.PONG, payload);
             return;
         }
 
@@ -275,7 +282,7 @@ public class WebsocketConnectionHandler extends AbstractConnectionHandler {
         }
     }
 
-    private void handlePayload(WebsocketNetworkState client) {
+    private void handlePayload(NetworkWebsocketClient client) {
         List<ByteBuffer> buffers = client.previousPayloads;
 
         if (client.curFrame.opcode.isControl()) {
@@ -313,13 +320,13 @@ public class WebsocketConnectionHandler extends AbstractConnectionHandler {
         if (client.primaryFrame.opcode == WebsocketFrameOpcodes.TEXT) {
             try {
                 utf8Decoder.decode(consolidated);
-                writeFrame(client.primaryFrame.opcode, consolidated, client);
+                client.sendFrame(client.primaryFrame.opcode, consolidated);
             } catch (CharacterCodingException e) {
                 logger.atWarning().log("Websocket client sent invalid UTF-8 data");
                 writeCloseFrame(WebsocketFrameCloseCodes.INCONSISTENT_DATA, client);
             }
         } else if (client.primaryFrame.opcode == WebsocketFrameOpcodes.BINARY) {
-            writeFrame(client.primaryFrame.opcode, consolidated, client);
+            client.sendFrame(client.primaryFrame.opcode, consolidated);
         }
 
         //TODO: Send websocket event
@@ -327,7 +334,7 @@ public class WebsocketConnectionHandler extends AbstractConnectionHandler {
         client.reset();
     }
 
-    private void readPayload(WebsocketNetworkState client, SocketChannel channel) throws IOException {
+    private void readPayload(NetworkWebsocketClient client, SocketChannel channel) throws IOException {
         ByteBuffer buffer = client.readBuffer;
         channel.read(buffer);
 
@@ -353,83 +360,7 @@ public class WebsocketConnectionHandler extends AbstractConnectionHandler {
             // do not change continuation sequence
             client.readBuffer = null;
             client.curFrame = null;
-            client.state = WebsocketNetworkState.WebsocketClientParserState.HEADER;
-        }
-    }
-
-
-    public void writeFrame(WebsocketFrameHeader header, ByteBuffer payload, WebsocketNetworkState client) {
-        client.writeBuffer.add(header.toByteBuffer(payload));
-    }
-
-    public void writeFrame(WebsocketFrameOpcodes opcode, String payload, WebsocketNetworkState client) {
-        writeFrame(opcode, StandardCharsets.UTF_8.encode(payload), client);
-    }
-
-    public void writeFrame(WebsocketFrameOpcodes opcode, ByteBuffer payload, WebsocketNetworkState client) {
-        WebsocketFrameHeader header = new WebsocketFrameHeader();
-        header.fin = true;
-        header.payloadLength = payload.limit();
-        header.opcode = opcode;
-
-        writeFrame(header, payload, client);
-    }
-
-    static class WebsocketNetworkState {
-
-        /**
-         * A list containing all payloads in the current continuation sequence
-         */
-        List<ByteBuffer> previousPayloads = new ArrayList<>();
-
-        ByteBuffer readBuffer = null;
-
-        /**
-         * The first frame of a series of continued messages. If this frame is not null, then the next non-control frame
-         * should be treated as a continuation to this frame.
-         */
-        WebsocketFrameHeader primaryFrame = null;
-
-        ByteBuffer nextFrameData = null;
-
-        /**
-         * The current frame, may not be a continuation of the primary frame (only if this frame is a control frame)
-         */
-        WebsocketFrameHeader curFrame = null;
-
-        /**
-         * The current state of parsing the websocket frame
-         */
-        WebsocketClientParserState state = WebsocketClientParserState.HEADER;
-
-        /**
-         * The total number of bytes read in the header (may include bytes read partially into the payload)
-         */
-        int headerTotalRead = 0;
-
-        /**
-         * A queue containing bytebuffers to be written back to the client. The data is assumed to begin at position 0
-         * and end at the buffer's limit
-         */
-        Queue<ByteBuffer> writeBuffer = new LinkedList<>();
-
-        /**
-         * Close the client connection after writing out all current messages
-         */
-        boolean shouldClose = false;
-
-        void reset() {
-            this.previousPayloads.clear();
-            this.readBuffer = null;
-            this.primaryFrame = null;
-            this.curFrame = null;
-            this.state = WebsocketClientParserState.HEADER;
-            this.headerTotalRead = 0;
-        }
-
-        enum WebsocketClientParserState {
-            HEADER,
-            PAYLOAD
+            client.state = NetworkWebsocketClient.WebsocketClientParserState.HEADER;
         }
     }
 }

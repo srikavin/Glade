@@ -16,30 +16,46 @@
 
 package me.infuzion.web.server.websocket;
 
-import me.infuzion.web.server.network.websocket.WebsocketConnectionHandler;
 import me.infuzion.web.server.network.websocket.WebsocketFrameOpcodes;
 
 import java.nio.ByteBuffer;
-import java.nio.charset.Charset;
 import java.util.UUID;
 
-public class WebsocketClient {
-    private UUID uuid;
-    private WebsocketConnectionHandler connectionHandler;
+/**
+ * Stored references to implementing classes should generally be avoided as implementations may store
+ * network buffers. References to the UUID of the client should be stored.
+ */
+public interface WebsocketClient {
 
-    public void send(String message, Charset charset) {
+    UUID getId();
 
-    }
+    /**
+     * Sends a UTF-8 encoded string to this websocket client
+     *
+     * @param message A UTF-8 encodeable string
+     */
+    void send(String message);
 
-    public void send(String message) {
+    /**
+     * Sends a binary message to this websocket client
+     *
+     * @param payload A byte buffer containing a binary payload
+     */
+    void sendBinary(ByteBuffer payload);
 
-    }
 
-    public void sendBinary(ByteBuffer payload) {
+    /**
+     * Sends a frame with the specified opcode and payload to the websocket client
+     *
+     * @param opcode  The opcode of the frame
+     * @param payload A byte buffer containing the payload
+     */
+    void sendFrame(WebsocketFrameOpcodes opcode, ByteBuffer payload);
 
-    }
+    /**
+     * Disconnects this client
+     */
+    void remove();
 
-    public void sendFrame(WebsocketFrameOpcodes opcode, ByteBuffer payload) {
-
-    }
+    boolean isConnected();
 }

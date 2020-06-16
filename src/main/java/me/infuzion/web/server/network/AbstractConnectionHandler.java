@@ -35,6 +35,11 @@ public abstract class AbstractConnectionHandler implements ConnectionHandler {
      */
     protected final Set<UUID> clients = Collections.newSetFromMap(new WeakHashMap<>());
 
+    /**
+     * A set containing all of the clients that are to be removed
+     */
+    protected final Set<UUID> removedClients = Collections.newSetFromMap(new WeakHashMap<>());
+
     protected Server server;
     protected EventManager eventManager;
     protected Selector clientSelector;
@@ -79,6 +84,12 @@ public abstract class AbstractConnectionHandler implements ConnectionHandler {
                 UUID uuid = (UUID) key.attachment();
 
                 if (!clients.contains(uuid)) {
+                    if (removedClients.contains(uuid)) {
+                        SocketChannel client = (SocketChannel) key.channel();
+                        client.close();
+                        key.cancel();
+                        removedClients.remove(uuid);
+                    }
                     continue;
                 }
 
@@ -112,4 +123,12 @@ public abstract class AbstractConnectionHandler implements ConnectionHandler {
     protected abstract void handleWrite(SelectionKey key, UUID uuid, SocketChannel clientChannel) throws Exception;
 
     protected abstract void handleNewClient(SocketChannel client, UUID uuid);
+
+    protected void removeClient(UUID uuid) {
+        clients.remove(uuid);
+        removedClients.add(uuid);
+        handleRemoveClient(uuid);
+    }
+
+    protected abstract void handleRemoveClient(UUID uuid);
 }

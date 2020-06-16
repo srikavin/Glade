@@ -48,6 +48,11 @@ public class HttpConnectionHandler extends AbstractConnectionHandler {
     }
 
     @Override
+    protected void handleRemoveClient(UUID uuid) {
+        clientMap.remove(uuid);
+    }
+
+    @Override
     protected void handleRead(SelectionKey key, UUID uuid, SocketChannel clientChannel) throws Exception {
         Client client = clientMap.get(uuid);
 
