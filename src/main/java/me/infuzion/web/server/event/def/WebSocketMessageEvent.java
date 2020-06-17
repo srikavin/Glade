@@ -16,17 +16,26 @@
 
 package me.infuzion.web.server.event.def;
 
-import me.infuzion.web.server.event.Event;
+import me.infuzion.web.server.network.websocket.WebsocketFrameOpcodes;
 import me.infuzion.web.server.websocket.WebsocketClient;
 
-public abstract class WebSocketEvent extends Event {
-    private final WebsocketClient client;
+import java.nio.ByteBuffer;
 
-    protected WebSocketEvent(WebsocketClient client) {
-        this.client = client;
+public abstract class WebSocketMessageEvent extends WebSocketEvent {
+    private final WebsocketFrameOpcodes opcode;
+    private final ByteBuffer rawBuffer;
+
+    public WebSocketMessageEvent(WebsocketClient client, WebsocketFrameOpcodes opcode, ByteBuffer rawBuffer) {
+        super(client);
+        this.opcode = opcode;
+        this.rawBuffer = rawBuffer.rewind().asReadOnlyBuffer();
     }
 
-    public WebsocketClient getClient() {
-        return client;
+    public ByteBuffer getRawBuffer() {
+        return rawBuffer;
+    }
+
+    public WebsocketFrameOpcodes getOpcode() {
+        return opcode;
     }
 }

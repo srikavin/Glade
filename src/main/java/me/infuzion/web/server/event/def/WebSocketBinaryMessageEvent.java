@@ -16,17 +16,13 @@
 
 package me.infuzion.web.server.event.def;
 
-import me.infuzion.web.server.event.Event;
+import me.infuzion.web.server.network.websocket.WebsocketFrameOpcodes;
 import me.infuzion.web.server.websocket.WebsocketClient;
 
-public abstract class WebSocketEvent extends Event {
-    private final WebsocketClient client;
+import java.nio.ByteBuffer;
 
-    protected WebSocketEvent(WebsocketClient client) {
-        this.client = client;
-    }
-
-    public WebsocketClient getClient() {
-        return client;
+public class WebSocketBinaryMessageEvent extends WebSocketMessageEvent {
+    public WebSocketBinaryMessageEvent(WebsocketClient client, ByteBuffer rawBuffer) {
+        super(client, WebsocketFrameOpcodes.BINARY, rawBuffer);
     }
 }

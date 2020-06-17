@@ -16,17 +16,25 @@
 
 package me.infuzion.web.server.event.def;
 
-import me.infuzion.web.server.event.Event;
+import me.infuzion.web.server.network.websocket.WebsocketFrameCloseCodes;
 import me.infuzion.web.server.websocket.WebsocketClient;
+import org.jetbrains.annotations.Nullable;
 
-public abstract class WebSocketEvent extends Event {
-    private final WebsocketClient client;
+public class WebSocketDisconnectEvent extends WebSocketEvent {
+    private final WebsocketFrameCloseCodes closeCode;
+    private final @Nullable String info;
 
-    protected WebSocketEvent(WebsocketClient client) {
-        this.client = client;
+    public WebSocketDisconnectEvent(WebsocketClient client, WebsocketFrameCloseCodes closeCode, @Nullable String info) {
+        super(client);
+        this.closeCode = closeCode;
+        this.info = info;
     }
 
-    public WebsocketClient getClient() {
-        return client;
+    public WebsocketFrameCloseCodes getCloseCode() {
+        return closeCode;
+    }
+
+    public @Nullable String getInfo() {
+        return info;
     }
 }

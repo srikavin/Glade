@@ -127,7 +127,7 @@ public class Server {
                         SocketChannel client = server.accept();
                         client.configureBlocking(false);
 
-                        connectionHandlers.get(defaultHandler).register(client, uuid);
+                        connectionHandlers.get(defaultHandler).register(client, uuid, null);
                     } catch (Exception e) {
                         key.cancel();
                     }

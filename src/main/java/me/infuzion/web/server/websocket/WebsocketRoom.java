@@ -16,17 +16,43 @@
 
 package me.infuzion.web.server.websocket;
 
+import me.infuzion.web.server.EventListener;
+import me.infuzion.web.server.event.EventManager;
+import me.infuzion.web.server.event.def.WebSocketDisconnectEvent;
+import me.infuzion.web.server.event.reflect.EventHandler;
+
+import java.util.ArrayList;
+import java.util.Iterator;
 import java.util.List;
 import java.util.UUID;
 
 public class WebsocketRoom {
-    List<WebsocketClient> clients;
+    private final List<WebsocketClient> clients;
+
+    public WebsocketRoom(EventManager manager) {
+        this.clients = new ArrayList<>();
+        manager.registerListener(new EventListener() {
+            @EventHandler
+            public void removeHandler(WebSocketDisconnectEvent event) {
+                clients.remove(event.getClient());
+            }
+        });
+    }
 
     public void addClient(WebsocketClient client) {
-
+        clients.add(client);
     }
 
     public void removeClient(UUID uuid) {
+        Iterator<WebsocketClient> iterator = clients.iterator();
+        while (iterator.hasNext()) {
+            WebsocketClient client = iterator.next();
+
+            if (client.getId().equals(uuid)) {
+                client.remove();
+                iterator.remove();
+            }
+        }
     }
 
     public void removeClient(WebsocketClient client) {

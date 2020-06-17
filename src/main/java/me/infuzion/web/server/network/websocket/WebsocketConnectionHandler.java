@@ -17,6 +17,9 @@
 package me.infuzion.web.server.network.websocket;
 
 import com.google.common.flogger.FluentLogger;
+import me.infuzion.web.server.event.Event;
+import me.infuzion.web.server.event.RequestEvent;
+import me.infuzion.web.server.event.def.*;
 import me.infuzion.web.server.network.AbstractConnectionHandler;
 import me.infuzion.web.server.util.ByteBufferUtils;
 import org.jetbrains.annotations.Nullable;
@@ -40,14 +43,32 @@ public class WebsocketConnectionHandler extends AbstractConnectionHandler {
     private final CharsetDecoder utf8Decoder = StandardCharsets.UTF_8.newDecoder();
 
     @Override
-    protected void handleNewClient(SocketChannel client, UUID uuid) {
-        clientMap.put(uuid, new NetworkWebsocketClient(uuid));
+    protected void handleNewClient(SocketChannel client, UUID uuid, @Nullable Event event) {
+        if (event instanceof RequestEvent) {
+            String path = ((RequestEvent) event).getPath();
+            NetworkWebsocketClient websocketClient = new NetworkWebsocketClient(uuid, path);
+
+            WebSocketConnectEvent connectEvent = new WebSocketConnectEvent(websocketClient, path);
+            eventManager.fireEvent(connectEvent);
+
+            clientMap.put(uuid, websocketClient);
+        } else {
+            clientMap.put(uuid, new NetworkWebsocketClient(uuid, ""));
+        }
     }
 
     @Override
     protected void handleRemoveClient(UUID uuid) {
-        clientMap.remove(uuid);
-        // TODO: Send event
+        NetworkWebsocketClient client = clientMap.remove(uuid);
+        if (client != null) {
+            sendDisconnectEvent(client, WebsocketFrameCloseCodes.RESERVED_ABNORMAL, null);
+        }
+    }
+
+    protected void sendDisconnectEvent(NetworkWebsocketClient client, WebsocketFrameCloseCodes opcode, @Nullable String info) {
+        WebSocketDisconnectEvent event = new WebSocketDisconnectEvent(client, opcode, info);
+
+        eventManager.fireEvent(event);
     }
 
     @Override
@@ -91,6 +112,10 @@ public class WebsocketConnectionHandler extends AbstractConnectionHandler {
     }
 
     private void writeCloseFrame(WebsocketFrameCloseCodes closeCode, @Nullable String additionalData, NetworkWebsocketClient client) {
+        if (client.shouldClose) {
+            return;
+        }
+
         ByteBuffer buffer;
         if (additionalData != null) {
             ByteBuffer encoded = StandardCharsets.UTF_8.encode(additionalData);
@@ -103,6 +128,8 @@ public class WebsocketConnectionHandler extends AbstractConnectionHandler {
         }
         buffer.rewind();
         client.sendFrame(WebsocketFrameOpcodes.CLOSE, buffer);
+
+        sendDisconnectEvent(client, closeCode, additionalData);
 
         client.shouldClose = true;
     }
@@ -317,19 +344,28 @@ public class WebsocketConnectionHandler extends AbstractConnectionHandler {
         }
         consolidated.rewind();
 
-        if (client.primaryFrame.opcode == WebsocketFrameOpcodes.TEXT) {
+        WebsocketFrameOpcodes opcode = client.primaryFrame.opcode;
+
+        WebSocketMessageEvent event;
+
+        if (opcode == WebsocketFrameOpcodes.TEXT) {
             try {
-                utf8Decoder.decode(consolidated);
-                client.sendFrame(client.primaryFrame.opcode, consolidated);
+                String decoded = utf8Decoder.decode(consolidated).toString();
+                event = new WebSocketTextMessageEvent(client, consolidated, decoded);
             } catch (CharacterCodingException e) {
                 logger.atWarning().log("Websocket client sent invalid UTF-8 data");
                 writeCloseFrame(WebsocketFrameCloseCodes.INCONSISTENT_DATA, client);
+                return;
             }
-        } else if (client.primaryFrame.opcode == WebsocketFrameOpcodes.BINARY) {
-            client.sendFrame(client.primaryFrame.opcode, consolidated);
+        } else if (opcode == WebsocketFrameOpcodes.BINARY) {
+            event = new WebSocketBinaryMessageEvent(client, consolidated);
+        } else {
+            logger.atWarning().log("Invalid opcode %s", opcode);
+            writeCloseFrame(WebsocketFrameCloseCodes.INCONSISTENT_DATA, client);
+            return;
         }
 
-        //TODO: Send websocket event
+        eventManager.fireEvent(event);
 
         client.reset();
     }

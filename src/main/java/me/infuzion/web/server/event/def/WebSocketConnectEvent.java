@@ -16,17 +16,17 @@
 
 package me.infuzion.web.server.event.def;
 
-import me.infuzion.web.server.event.Event;
 import me.infuzion.web.server.websocket.WebsocketClient;
 
-public abstract class WebSocketEvent extends Event {
-    private final WebsocketClient client;
+public class WebSocketConnectEvent extends WebSocketEvent {
+    private final String path;
 
-    protected WebSocketEvent(WebsocketClient client) {
-        this.client = client;
+    public WebSocketConnectEvent(WebsocketClient client, String path) {
+        super(client);
+        this.path = path;
     }
 
-    public WebsocketClient getClient() {
-        return client;
+    public String getPath() {
+        return path;
     }
 }

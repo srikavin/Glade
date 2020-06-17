@@ -17,10 +17,12 @@
 package me.infuzion.web.server.network;
 
 import com.google.common.flogger.FluentLogger;
+import me.infuzion.web.server.event.Event;
 import me.infuzion.web.server.event.def.PageRequestEvent;
 import me.infuzion.web.server.http.parser.*;
 import me.infuzion.web.server.response.DefaultResponseGenerator;
 import me.infuzion.web.server.response.ResponseGenerator;
+import org.jetbrains.annotations.Nullable;
 
 import java.nio.ByteBuffer;
 import java.nio.channels.SelectionKey;
@@ -43,7 +45,7 @@ public class HttpConnectionHandler extends AbstractConnectionHandler {
     }
 
     @Override
-    protected void handleNewClient(SocketChannel client, UUID uuid) {
+    protected void handleNewClient(SocketChannel client, UUID uuid, @Nullable Event event) {
         clientMap.put(uuid, new Client());
     }
 
@@ -92,6 +94,9 @@ public class HttpConnectionHandler extends AbstractConnectionHandler {
         }
 
         PageRequestEvent event = new PageRequestEvent(request, bodyData);
+
+        client.event = event;
+
         event.setResponseGenerator(defaultResponseGenerator);
         event.setConnectionHandler(this.getClass());
         eventManager.fireEvent(event);
@@ -152,7 +157,7 @@ public class HttpConnectionHandler extends AbstractConnectionHandler {
                 logger.atInfo().log("Transferring connection to %s", client.toTransfer);
 
                 // Transfer this client to the registered connection handler
-                handler.register(clientChannel, uuid);
+                handler.register(clientChannel, uuid, client.event);
                 clients.remove(uuid);
                 return;
             }
@@ -168,6 +173,7 @@ public class HttpConnectionHandler extends AbstractConnectionHandler {
         ByteBuffer buffer = null;
         ByteBuffer headersToWrite = null;
         ByteBuffer bodyToWrite = null;
+        PageRequestEvent event = null;
         Class<? extends ConnectionHandler> toTransfer = null;
     }
 }

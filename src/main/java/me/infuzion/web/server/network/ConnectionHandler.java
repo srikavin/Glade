@@ -17,7 +17,9 @@
 package me.infuzion.web.server.network;
 
 import me.infuzion.web.server.Server;
+import me.infuzion.web.server.event.Event;
 import me.infuzion.web.server.event.EventManager;
+import org.jetbrains.annotations.Nullable;
 
 import java.nio.channels.Selector;
 import java.nio.channels.SocketChannel;
@@ -36,8 +38,9 @@ public interface ConnectionHandler extends Runnable {
      * Registers a client with this connection handler.
      *
      * @param clientUUID The UUID of the client to begin processing
+     * @param event      The event that triggered this transfer, or null if no event triggered this registration.
      */
-    void register(SocketChannel channel, UUID clientUUID) throws Exception;
+    void register(SocketChannel channel, UUID clientUUID, @Nullable Event event) throws Exception;
 
     /**
      * Begins handling connections. Implementing classes should iterate indefinitely while reading and writing

@@ -23,6 +23,13 @@ import java.nio.charset.StandardCharsets;
 import java.util.*;
 
 class NetworkWebsocketClient implements WebsocketClient {
+    private final UUID uuid;
+    private final String path;
+
+    NetworkWebsocketClient(UUID uuid, String path) {
+        this.uuid = uuid;
+        this.path = path;
+    }
 
     /**
      * A list containing all payloads in the current continuation sequence
@@ -62,9 +69,6 @@ class NetworkWebsocketClient implements WebsocketClient {
 
     boolean shouldClose = false;
 
-    NetworkWebsocketClient(UUID uuid) {
-    }
-
     /**
      * Close the client connection after writing out all current messages
      */
@@ -79,7 +83,7 @@ class NetworkWebsocketClient implements WebsocketClient {
 
     @Override
     public UUID getId() {
-        return null;
+        return uuid;
     }
 
     @Override
@@ -116,8 +120,25 @@ class NetworkWebsocketClient implements WebsocketClient {
         return !this.shouldClose;
     }
 
+    public String getPath() {
+        return path;
+    }
+
     enum WebsocketClientParserState {
         HEADER,
         PAYLOAD
+    }
+
+    @Override
+    public boolean equals(Object o) {
+        if (this == o) return true;
+        if (o == null || getClass() != o.getClass()) return false;
+        NetworkWebsocketClient that = (NetworkWebsocketClient) o;
+        return uuid.equals(that.uuid);
+    }
+
+    @Override
+    public int hashCode() {
+        return Objects.hash(uuid);
     }
 }

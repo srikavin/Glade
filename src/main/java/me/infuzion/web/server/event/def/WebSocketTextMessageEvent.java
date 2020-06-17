@@ -16,17 +16,20 @@
 
 package me.infuzion.web.server.event.def;
 
-import me.infuzion.web.server.event.Event;
+import me.infuzion.web.server.network.websocket.WebsocketFrameOpcodes;
 import me.infuzion.web.server.websocket.WebsocketClient;
 
-public abstract class WebSocketEvent extends Event {
-    private final WebsocketClient client;
+import java.nio.ByteBuffer;
 
-    protected WebSocketEvent(WebsocketClient client) {
-        this.client = client;
+public class WebSocketTextMessageEvent extends WebSocketMessageEvent {
+    private final String content;
+
+    public WebSocketTextMessageEvent(WebsocketClient client, ByteBuffer rawBuffer, String stringContent) {
+        super(client, WebsocketFrameOpcodes.TEXT, rawBuffer);
+        this.content = stringContent;
     }
 
-    public WebsocketClient getClient() {
-        return client;
+    public String getContent() {
+        return content;
     }
 }

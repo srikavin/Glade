@@ -18,7 +18,9 @@ package me.infuzion.web.server.network;
 
 import com.google.common.flogger.FluentLogger;
 import me.infuzion.web.server.Server;
+import me.infuzion.web.server.event.Event;
 import me.infuzion.web.server.event.EventManager;
+import org.jetbrains.annotations.Nullable;
 
 import java.io.IOException;
 import java.nio.channels.ClosedChannelException;
@@ -46,10 +48,10 @@ public abstract class AbstractConnectionHandler implements ConnectionHandler {
 
 
     @Override
-    public void register(SocketChannel client, UUID clientUUID) throws ClosedChannelException {
+    public void register(SocketChannel client, UUID clientUUID, Event event) throws ClosedChannelException {
         clients.add(clientUUID);
 
-        handleNewClient(client, clientUUID);
+        handleNewClient(client, clientUUID, event);
 
         client.register(clientSelector, SelectionKey.OP_READ | SelectionKey.OP_WRITE, clientUUID);
         clientSelector.wakeup();
@@ -104,9 +106,7 @@ public abstract class AbstractConnectionHandler implements ConnectionHandler {
                     }
                 } catch (Exception e) {
                     logger.atWarning().withCause(e).log("Exception occurred");
-                    clients.remove(uuid);
-                    client.close();
-                    key.cancel();
+                    removeClient(uuid);
                 }
             }
         }
@@ -122,13 +122,18 @@ public abstract class AbstractConnectionHandler implements ConnectionHandler {
      */
     protected abstract void handleWrite(SelectionKey key, UUID uuid, SocketChannel clientChannel) throws Exception;
 
-    protected abstract void handleNewClient(SocketChannel client, UUID uuid);
+    protected abstract void handleNewClient(SocketChannel client, UUID uuid, @Nullable Event event);
 
     protected void removeClient(UUID uuid) {
         clients.remove(uuid);
         removedClients.add(uuid);
-        handleRemoveClient(uuid);
+
+        try {
+            handleRemoveClient(uuid);
+        } catch (Exception e) {
+            logger.atWarning().withCause(e).log("Exception occurred while removing client");
+        }
     }
 
-    protected abstract void handleRemoveClient(UUID uuid);
+    protected abstract void handleRemoveClient(UUID uuid) throws Exception;
 }

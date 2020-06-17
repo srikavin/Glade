@@ -17,6 +17,8 @@
 package me.infuzion.web.server;
 
 import me.infuzion.web.server.event.def.PageRequestEvent;
+import me.infuzion.web.server.event.def.WebSocketConnectEvent;
+import me.infuzion.web.server.event.def.WebSocketMessageEvent;
 import me.infuzion.web.server.event.reflect.EventHandler;
 import me.infuzion.web.server.event.reflect.Route;
 import me.infuzion.web.server.event.reflect.param.Response;
@@ -45,6 +47,18 @@ public class Main {
             @Response
             public String a(PageRequestEvent event) {
                 return "TEST";
+            }
+        });
+        server.getEventManager().registerListener(new EventListener() {
+            @EventHandler
+            public void a(WebSocketMessageEvent event) {
+                event.getClient().sendFrame(event.getOpcode(), event.getRawBuffer());
+            }
+        });
+        server.getEventManager().registerListener(new EventListener() {
+            @EventHandler
+            public void a(WebSocketConnectEvent event) {
+                event.getClient().send("onConnect fired");
             }
         });
         server.start();

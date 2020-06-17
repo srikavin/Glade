@@ -18,7 +18,7 @@ package me.infuzion.web.server.network.websocket;
 
 import org.jetbrains.annotations.NotNull;
 
-enum WebsocketFrameCloseCodes {
+public enum WebsocketFrameCloseCodes {
     NORMAL((short) 1000),
     GOING_AWAY((short) 1001),
     PROTOCOL_ERROR((short) 1002),

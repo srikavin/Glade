@@ -19,8 +19,7 @@ package me.infuzion.web.server.event;
 import com.google.common.flogger.FluentLogger;
 import com.google.common.flogger.StackSize;
 import me.infuzion.web.server.EventListener;
-import me.infuzion.web.server.event.def.PageRequestEvent;
-import me.infuzion.web.server.event.def.WebSocketEvent;
+import me.infuzion.web.server.event.def.*;
 import me.infuzion.web.server.event.reflect.*;
 import me.infuzion.web.server.event.reflect.param.DefaultTypeConverter;
 import me.infuzion.web.server.event.reflect.param.ParameterGenerator;
@@ -41,16 +40,21 @@ public class EventManager {
     private final List<Class<? extends Event>> eventTypes = new ArrayList<>();
     private final List<EventRouterEntry<?>> eventRouters = new ArrayList<>();
 
-    public void fireEvent(Event event) throws Exception {
+    public void fireEvent(Event event) {
         logger.atFine().withStackTrace(StackSize.MEDIUM).log("Event %s fired", event);
         for (Listener listener : listeners) {
             if (listener.getEvent().equals(event.getClass()) && listener.getControl() == EventControl.FULL) {
                 logger.atFiner().log("Calling %s for %s with FULL control", listener.getEventListener().getClass().getName(), event.getName());
-                if (callListener(event, listener)) {
-                    return;
+                try {
+                    if (callListener(event, listener)) {
+                        return;
+                    }
+                } catch (Exception e) {
+                    logger.atSevere().withCause(e).log("Exception occurred in %s when processing %s", listener.getListenerMethod(), event);
                 }
             }
         }
+
         fireEvent(event, EventPriority.START);
         fireEvent(event, EventPriority.NORMAL);
         fireEvent(event, EventPriority.MONITOR);
@@ -67,6 +71,11 @@ public class EventManager {
     private void registerDefaultEventTypes() {
         registerEvent(PageRequestEvent.class);
         registerEvent(WebSocketEvent.class);
+        registerEvent(WebSocketMessageEvent.class);
+        registerEvent(WebSocketBinaryMessageEvent.class);
+        registerEvent(WebSocketTextMessageEvent.class);
+        registerEvent(WebSocketConnectEvent.class);
+        registerEvent(WebSocketDisconnectEvent.class);
     }
 
     private boolean callListener(Event event, Listener listener) throws Exception {
@@ -117,15 +126,23 @@ public class EventManager {
         }
     }
 
-    private void fireEvent(Event event, EventPriority priority) throws Exception {
+    private void fireEvent(Event event, EventPriority priority) {
         for (Listener listener : listeners) {
             if (listener.getEvent().equals(event.getClass()) && listener.getPriority().equals(priority)) {
                 if (event instanceof RequestEvent && listener.getRoute() != null) {
-                    callRoutableListener((RequestEvent) event, listener);
+                    try {
+                        callRoutableListener((RequestEvent) event, listener);
+                    } catch (Exception e) {
+                        logger.atSevere().withCause(e).log("Exception occurred in %s when processing %s", listener.getListenerMethod(), event);
+                    }
                     continue;
                 }
 
-                callListener(event, listener);
+                try {
+                    callListener(event, listener);
+                } catch (Exception e) {
+                    logger.atSevere().withCause(e).log("Exception occurred in %s when processing %s", listener.getListenerMethod(), event);
+                }
             }
         }
     }
