@@ -16,7 +16,7 @@
 
 package me.infuzion.web.server.router.def;
 
-import me.infuzion.web.server.event.RequestEvent;
+import me.infuzion.web.server.event.reflect.param.HasPath;
 import me.infuzion.web.server.router.Router;
 import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
@@ -24,9 +24,9 @@ import org.jetbrains.annotations.Nullable;
 import java.util.HashMap;
 import java.util.Map;
 
-public class DefaultRouter implements Router<RequestEvent> {
+public class DefaultRouter implements Router {
     @Override
-    public @Nullable Map<String, String> parseDynamicSegments(@NotNull String routePath, @NotNull RequestEvent event) {
+    public @Nullable Map<String, String> parseDynamicSegments(@NotNull String routePath, @NotNull HasPath event) {
         // "/user/:user_id"
         // "/user/asdbawe"
 

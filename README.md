@@ -54,8 +54,8 @@ import me.infuzion.web.server.event.EventManager;
 import me.infuzion.web.server.event.def.PageRequestEvent;
 import me.infuzion.web.server.event.reflect.EventHandler;
 import me.infuzion.web.server.event.reflect.Route;
-import me.infuzion.web.server.event.reflect.param.QueryParam;
-import me.infuzion.web.server.event.reflect.param.Response;
+import me.infuzion.web.server.event.reflect.param.mapper.impl.QueryParam;
+import me.infuzion.web.server.event.reflect.param.mapper.impl.Response;
 
 import java.io.IOException;
 import java.net.InetSocketAddress;

@@ -14,7 +14,7 @@
  * limitations under the License.
  */
 
-package me.infuzion.web.server.event.reflect.param;
+package me.infuzion.web.server.event.reflect.param.mapper.impl;
 
 import java.lang.annotation.ElementType;
 import java.lang.annotation.Retention;
@@ -32,7 +32,7 @@ import java.lang.annotation.Target;
 public @interface BodyParam {
     /**
      * Indicates that the body should be parsed as a single entity. When used with raw, the raw contents of the body
-     * are passed as a paramter.
+     * are passed as a parameter.
      */
     String ENTIRE_BODY = "$glade_entire_body";
 

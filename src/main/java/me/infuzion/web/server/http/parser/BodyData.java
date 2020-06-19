@@ -42,10 +42,8 @@ public class BodyData {
     }
 
     public static class BodyField {
-
         @NotNull
         private final String fieldName;
-
         @Nullable
         private final String fileName;
         @NotNull
@@ -91,7 +89,7 @@ public class BodyData {
          * @return The raw contents of this field. Any encoding is removed.
          */
         public @NotNull ByteBuffer getRawContent() {
-            return rawContent;
+            return rawContent.rewind();
         }
 
         /**

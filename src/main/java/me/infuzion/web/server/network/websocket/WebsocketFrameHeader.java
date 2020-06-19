@@ -31,17 +31,17 @@ class WebsocketFrameHeader {
      * 1 bit
      * Reserved for extension use
      */
-    boolean rsv1;
+    boolean rsv1 = false;
     /**
      * 1 bit
      * Reserved for extension use
      */
-    boolean rsv2;
+    boolean rsv2 = false;
     /**
      * 1 bit
      * Reserved for extension use
      */
-    boolean rsv3;
+    boolean rsv3 = false;
     /**
      * 4 bits
      */

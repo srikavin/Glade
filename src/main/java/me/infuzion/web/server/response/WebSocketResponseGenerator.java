@@ -36,11 +36,15 @@ public class WebSocketResponseGenerator extends DefaultResponseGenerator {
         generated.append("HTTP/1.1 101 Switching Protocols\r\n");
         writeHeaderLine(generated, "Upgrade", "websocket");
         writeHeaderLine(generated, "Connection", "Upgrade");
-        writeHeaderLine(generated, "Server", "Glade v" + Server.version);
         writeHeaders(generated, pEvent.getResponse().getHeaders());
-        writeLastHeaderLine(generated, "WebSocket", "WebSocket");
-
+        writeLastHeaderLine(generated, "Server", "Glade v" + Server.version);
 
         return ByteBuffer.wrap(generated.toString().getBytes(StandardCharsets.UTF_8));
+    }
+
+    @Override
+    public boolean shouldCopyBody(Event event) {
+        // ignore the body generated as the response would be treated as a websocket frame
+        return false;
     }
 }

@@ -20,6 +20,7 @@ import com.google.gson.Gson;
 import com.google.gson.JsonElement;
 import com.google.gson.JsonParser;
 import org.jetbrains.annotations.NotNull;
+import org.jetbrains.annotations.Nullable;
 
 import java.nio.ByteBuffer;
 import java.nio.charset.StandardCharsets;
@@ -42,7 +43,7 @@ public class JsonBodyParser implements BodyParser {
     }
 
     @Override
-    public @NotNull BodyData parse(@NotNull HttpRequest request, @NotNull ByteBuffer body) {
+    public @NotNull BodyData parse(@Nullable HttpRequest request, @NotNull ByteBuffer body) {
         String json = StandardCharsets.UTF_8.decode(body).toString();
 
         JsonElement object = JsonParser.parseString(json);

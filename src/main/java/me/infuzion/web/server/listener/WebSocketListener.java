@@ -53,7 +53,7 @@ public class WebSocketListener implements EventListener {
 
     @EventHandler(priority = EventPriority.START, control = EventControl.FULL)
     public boolean onPageLoad(PageRequestEvent event) {
-        final Map<String, String> headers = event.getHeaders();
+        final Map<String, String> headers = event.getRequestHeaders();
 
         if (!(event.getHttpMethod() == HttpMethod.GET)) {
             return false;

@@ -16,13 +16,13 @@
 
 package me.infuzion.web.server.router;
 
-import me.infuzion.web.server.event.RequestEvent;
+import me.infuzion.web.server.event.reflect.param.HasPath;
 import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
 
 import java.util.Map;
 
-public interface Router<T extends RequestEvent> {
+public interface Router {
     /**
      * Parses the dynamic segments of the route and returns them.
      * Should return null if the visitedPath is not valid for routePath
@@ -33,5 +33,5 @@ public interface Router<T extends RequestEvent> {
      *                  e.g. "/user/123"
      * @return A map if visitedPath is valid for routePath or null
      */
-    @Nullable Map<String, String> parseDynamicSegments(@NotNull String routePath, @NotNull T event);
+    @Nullable Map<String, String> parseDynamicSegments(@NotNull String routePath, @NotNull HasPath event);
 }

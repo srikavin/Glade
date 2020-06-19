@@ -16,7 +16,7 @@
 
 package me.infuzion.web.server.event.def;
 
-import me.infuzion.web.server.event.Event;
+import me.infuzion.web.server.event.AbstractEvent;
 import me.infuzion.web.server.event.RequestEvent;
 import me.infuzion.web.server.http.HttpMethod;
 import me.infuzion.web.server.http.HttpResponse;
@@ -33,7 +33,7 @@ import java.util.Map;
 /**
  * Represents an HTTP client requesting a path. This event should be fired when a new request is made to the server.
  */
-public class PageRequestEvent extends Event implements RequestEvent {
+public class PageRequestEvent extends AbstractEvent implements RequestEvent {
 
     private final @NotNull HttpRequest request;
 
@@ -60,7 +60,7 @@ public class PageRequestEvent extends Event implements RequestEvent {
         return bodyData;
     }
 
-    public Map<String, String> getHeaders() {
+    public Map<String, String> getRequestHeaders() {
         return request.getHeaders();
     }
 
@@ -85,18 +85,13 @@ public class PageRequestEvent extends Event implements RequestEvent {
     }
 
     @Override
-    public void setBody(String body) {
+    public void setResponseBody(String body) {
         response.setBody(body);
     }
 
     @Override
     public void setBody(ByteBuffer body) {
         response.setBody(body);
-    }
-
-    @Override
-    public void setContentType(String type) {
-        response.setContentType(type);
     }
 
     public @NotNull HttpResponse getResponse() {
@@ -109,5 +104,10 @@ public class PageRequestEvent extends Event implements RequestEvent {
 
     public void setConnectionHandler(@NotNull Class<? extends ConnectionHandler> connectionHandler) {
         this.connectionHandler = connectionHandler;
+    }
+
+    @Override
+    public void setResponseHeader(String name, String value) {
+        this.response.setHeader(name, value);
     }
 }

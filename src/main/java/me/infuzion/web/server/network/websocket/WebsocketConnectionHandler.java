@@ -18,8 +18,8 @@ package me.infuzion.web.server.network.websocket;
 
 import com.google.common.flogger.FluentLogger;
 import me.infuzion.web.server.event.Event;
-import me.infuzion.web.server.event.RequestEvent;
 import me.infuzion.web.server.event.def.*;
+import me.infuzion.web.server.event.reflect.param.HasPath;
 import me.infuzion.web.server.network.AbstractConnectionHandler;
 import me.infuzion.web.server.util.ByteBufferUtils;
 import org.jetbrains.annotations.Nullable;
@@ -44,8 +44,8 @@ public class WebsocketConnectionHandler extends AbstractConnectionHandler {
 
     @Override
     protected void handleNewClient(SocketChannel client, UUID uuid, @Nullable Event event) {
-        if (event instanceof RequestEvent) {
-            String path = ((RequestEvent) event).getPath();
+        if (event instanceof HasPath) {
+            String path = ((HasPath) event).getPath();
             NetworkWebsocketClient websocketClient = new NetworkWebsocketClient(uuid, path);
 
             WebSocketConnectEvent connectEvent = new WebSocketConnectEvent(websocketClient, path);
@@ -139,7 +139,6 @@ public class WebsocketConnectionHandler extends AbstractConnectionHandler {
         NetworkWebsocketClient client = clientMap.get(uuid);
 
         ByteBuffer buffer = client.writeBuffer.peek();
-
 
         if (buffer != null) {
             clientChannel.write(buffer);
@@ -389,7 +388,6 @@ public class WebsocketConnectionHandler extends AbstractConnectionHandler {
             } else {
                 client.previousPayloads.add(wrapped);
             }
-
 
             handlePayload(client);
 

@@ -14,7 +14,7 @@
  * limitations under the License.
  */
 
-package me.infuzion.web.server.event.reflect.param;
+package me.infuzion.web.server.event.reflect.param.mapper.impl;
 
 import java.lang.annotation.ElementType;
 import java.lang.annotation.Retention;

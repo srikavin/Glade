@@ -16,21 +16,18 @@
 
 package me.infuzion.web.server.event.reflect.param;
 
-import java.lang.annotation.ElementType;
-import java.lang.annotation.Retention;
-import java.lang.annotation.RetentionPolicy;
-import java.lang.annotation.Target;
+import me.infuzion.web.server.event.Event;
+import me.infuzion.web.server.http.parser.BodyData;
 
-/**
- * Used to denote that the annotated parameter should be substituted with the specified url path parameter.
- */
-@Target(ElementType.PARAMETER)
-@Retention(RetentionPolicy.RUNTIME)
-public @interface URLParam {
+import java.nio.ByteBuffer;
+
+public interface HasBody extends Event {
     /**
-     * For example, to get the :user_name segment of /path/directory/:user_name/asd , the pathID should be `user_name`.
-     *
-     * @return The id of the path segment.
+     * @return The data associated with the body of this request.
      */
-    String value();
+    String getRequestData();
+
+    ByteBuffer getRawRequestData();
+
+    BodyData getBodyData();
 }

@@ -21,10 +21,16 @@ import me.infuzion.web.server.event.EventManager;
 import me.infuzion.web.server.event.def.PageRequestEvent;
 import me.infuzion.web.server.event.reflect.EventHandler;
 import me.infuzion.web.server.event.reflect.EventPriority;
+import me.infuzion.web.server.event.reflect.Route;
+import me.infuzion.web.server.event.reflect.param.DefaultTypeConverter;
+import me.infuzion.web.server.event.reflect.param.TypeConverter;
+import me.infuzion.web.server.event.reflect.param.mapper.impl.*;
 import me.infuzion.web.server.listener.WebSocketListener;
 import me.infuzion.web.server.network.ConnectionHandler;
 import me.infuzion.web.server.network.HttpConnectionHandler;
 import me.infuzion.web.server.network.websocket.WebsocketConnectionHandler;
+import me.infuzion.web.server.router.Router;
+import me.infuzion.web.server.router.def.DefaultRouter;
 import org.jetbrains.annotations.Nullable;
 
 import java.io.IOException;
@@ -53,7 +59,15 @@ public class Server {
         serverSocketChannel.bind(address);
         serverSocketChannel.configureBlocking(false);
 
+        TypeConverter typeConverter = new DefaultTypeConverter();
+        Router router = new DefaultRouter();
+
         eventManager = new EventManager();
+        eventManager.registerAnnotation(BodyParam.class, new BodyParamMapper(typeConverter));
+        eventManager.registerAnnotation(QueryParam.class, new QueryParamMapper(typeConverter));
+        eventManager.registerAnnotation(UrlParam.class, new UrlParamMapper(router));
+        eventManager.registerAnnotation(Response.class, new BodyResponseMapper(typeConverter));
+        eventManager.registerAnnotation(Route.class, new RoutePredicate(router));
 
         eventManager.registerListener(new EventListener() {
             @EventHandler(priority = EventPriority.MONITOR)

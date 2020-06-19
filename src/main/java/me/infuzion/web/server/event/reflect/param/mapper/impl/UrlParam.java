@@ -14,10 +14,7 @@
  * limitations under the License.
  */
 
-package me.infuzion.web.server.event.reflect;
-
-import me.infuzion.web.server.event.AbstractEvent;
-import me.infuzion.web.server.event.Event;
+package me.infuzion.web.server.event.reflect.param.mapper.impl;
 
 import java.lang.annotation.ElementType;
 import java.lang.annotation.Retention;
@@ -25,21 +22,15 @@ import java.lang.annotation.RetentionPolicy;
 import java.lang.annotation.Target;
 
 /**
- * If using {@link EventControl#FULL}, {@code return true} if you want to retain full control or
- * {@code return false} if you want other listeners to be called.
- * <p>
- * If the default value for {@linkplain #value()} is not overwritten, the first parameter of the event handler
- * must be the event this handler is listening for.
+ * Used to denote that the annotated parameter should be substituted with the specified url path parameter.
  */
-@Target(ElementType.METHOD)
+@Target(ElementType.PARAMETER)
 @Retention(RetentionPolicy.RUNTIME)
-public @interface EventHandler {
-    final class NoEventSelected extends AbstractEvent {
-    }
-
-    EventPriority priority() default EventPriority.NORMAL;
-
-    EventControl control() default EventControl.NORMAL;
-
-    Class<? extends Event> value() default NoEventSelected.class;
+public @interface UrlParam {
+    /**
+     * For example, to get the :user_name segment of /path/directory/:user_name/asd , the pathID should be `user_name`.
+     *
+     * @return The id of the path segment.
+     */
+    String value();
 }

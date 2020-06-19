@@ -57,5 +57,10 @@ public interface WebsocketClient {
      */
     void remove();
 
+    /**
+     * Gets the path the websocket is connected to
+     */
+    String getPath();
+
     boolean isConnected();
 }

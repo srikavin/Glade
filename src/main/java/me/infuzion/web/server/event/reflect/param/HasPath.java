@@ -14,12 +14,13 @@
  * limitations under the License.
  */
 
-package me.infuzion.web.server;
+package me.infuzion.web.server.event.reflect.param;
 
-/**
- * Marker interface for event listeners. All event listeners must implement this interface. Implementing classes should
- * contain event handlers that are annotated with {@link me.infuzion.web.server.event.reflect.EventHandler}.
- */
-public interface EventListener {
+import me.infuzion.web.server.event.Event;
 
+public interface HasPath extends Event {
+    /**
+     * @return The relative path for this request.
+     */
+    String getPath();
 }

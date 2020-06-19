@@ -16,40 +16,10 @@
 
 package me.infuzion.web.server.event;
 
-import me.infuzion.web.server.http.HttpMethod;
-import me.infuzion.web.server.http.parser.BodyData;
-import me.infuzion.web.server.util.HttpParameters;
-
-import java.nio.ByteBuffer;
+import me.infuzion.web.server.event.reflect.param.*;
 
 /**
  * Implementing events can be used with dynamic URL-based routing.
  */
-public interface RequestEvent {
-    HttpMethod getHttpMethod();
-
-    /**
-     * @return The relative path for this request.
-     */
-    String getPath();
-
-    /**
-     * @return The data associated with the body of this request.
-     */
-    String getRequestData();
-
-    ByteBuffer getRawRequestData();
-
-    /**
-     * @return The data associated with the query parameters of this request.
-     */
-    HttpParameters getQueryParameters();
-
-    BodyData getBodyData();
-
-    void setBody(String body);
-
-    void setBody(ByteBuffer body);
-
-    void setContentType(String type);
+public interface RequestEvent extends HasHttpMethod, HasPath, HasBody, HasQueryParameters, HasHeaders, CanSetBody, CanSetHeaders {
 }

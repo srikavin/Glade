@@ -16,8 +16,8 @@
 
 package me.infuzion.web.server.event.reflect.param;
 
-public enum ParameterType {
-    BODY,
-    QUERY,
-    URL
+import me.infuzion.web.server.event.Event;
+
+public interface CanSetHeaders extends Event {
+    void setResponseHeader(String name, String value);
 }

@@ -16,10 +16,11 @@
 
 package me.infuzion.web.server.event.def;
 
-import me.infuzion.web.server.event.Event;
+import me.infuzion.web.server.event.AbstractEvent;
+import me.infuzion.web.server.event.reflect.param.HasPath;
 import me.infuzion.web.server.websocket.WebsocketClient;
 
-public abstract class WebSocketEvent extends Event {
+public abstract class WebSocketEvent extends AbstractEvent implements HasPath {
     private final WebsocketClient client;
 
     protected WebSocketEvent(WebsocketClient client) {
@@ -28,5 +29,10 @@ public abstract class WebSocketEvent extends Event {
 
     public WebsocketClient getClient() {
         return client;
+    }
+
+    @Override
+    public String getPath() {
+        return client.getPath();
     }
 }

@@ -16,13 +16,19 @@
 
 package me.infuzion.web.server.event.def;
 
+import me.infuzion.web.server.event.reflect.param.CanSetBody;
+import me.infuzion.web.server.event.reflect.param.HasBody;
+import me.infuzion.web.server.http.parser.BodyData;
 import me.infuzion.web.server.network.websocket.WebsocketFrameOpcodes;
 import me.infuzion.web.server.websocket.WebsocketClient;
 
 import java.nio.ByteBuffer;
+import java.nio.charset.StandardCharsets;
+import java.util.Collections;
 
-public abstract class WebSocketMessageEvent extends WebSocketEvent {
+public abstract class WebSocketMessageEvent extends WebSocketEvent implements HasBody, CanSetBody {
     private final WebsocketFrameOpcodes opcode;
+
     private final ByteBuffer rawBuffer;
 
     public WebSocketMessageEvent(WebsocketClient client, WebsocketFrameOpcodes opcode, ByteBuffer rawBuffer) {
@@ -31,8 +37,30 @@ public abstract class WebSocketMessageEvent extends WebSocketEvent {
         this.rawBuffer = rawBuffer.rewind().asReadOnlyBuffer();
     }
 
-    public ByteBuffer getRawBuffer() {
-        return rawBuffer;
+    @Override
+    public ByteBuffer getRawRequestData() {
+        return rawBuffer.rewind();
+    }
+
+    @Override
+    public String getRequestData() {
+        return StandardCharsets.UTF_8.decode(rawBuffer).toString();
+    }
+
+    @Override
+    public BodyData getBodyData() {
+        //TODO: implement properly
+        return new BodyData(Collections.emptyMap());
+    }
+
+    @Override
+    public void setResponseBody(String body) {
+        getClient().send(body);
+    }
+
+    @Override
+    public void setBody(ByteBuffer body) {
+        getClient().sendBinary(body.rewind());
     }
 
     public WebsocketFrameOpcodes getOpcode() {

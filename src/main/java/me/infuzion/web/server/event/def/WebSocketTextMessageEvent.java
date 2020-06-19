@@ -29,7 +29,8 @@ public class WebSocketTextMessageEvent extends WebSocketMessageEvent {
         this.content = stringContent;
     }
 
-    public String getContent() {
+    @Override
+    public String getRequestData() {
         return content;
     }
 }

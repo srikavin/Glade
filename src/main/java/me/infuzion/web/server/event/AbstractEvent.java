@@ -18,17 +18,31 @@ package me.infuzion.web.server.event;
 
 import me.infuzion.web.server.response.ResponseGenerator;
 
-public interface Event {
-    default String getName() {
+public abstract class AbstractEvent implements Event {
+    private final long creationTime = System.nanoTime();
+
+    private ResponseGenerator responseGenerator;
+
+    @Override
+    public String getName() {
         return getClass().getName();
     }
 
-    ResponseGenerator getResponseGenerator();
+    @Override
+    final public ResponseGenerator getResponseGenerator() {
+        return responseGenerator;
+    }
 
-    void setResponseGenerator(ResponseGenerator generator);
+    @Override
+    final public void setResponseGenerator(ResponseGenerator generator) {
+        this.responseGenerator = generator;
+    }
 
     /**
      * The time this event was created in nanoseconds (as given by {@link System#nanoTime()}).
      */
-    long getCreationTime();
+    @Override
+    public final long getCreationTime() {
+        return creationTime;
+    }
 }

@@ -14,7 +14,7 @@
  * limitations under the License.
  */
 
-package me.infuzion.web.server.event.reflect.param;
+package me.infuzion.web.server.event.reflect.param.mapper.impl;
 
 import java.lang.annotation.ElementType;
 import java.lang.annotation.Retention;
@@ -32,7 +32,7 @@ public @interface QueryParam {
      * are expected, the annotated parameter should have an array type, otherwise only the first parameter will be
      * provided.
      *
-     * @return The id of the path segment.
+     * @return The id of the query value
      */
     String value();
 }

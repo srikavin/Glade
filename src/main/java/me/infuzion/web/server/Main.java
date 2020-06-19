@@ -17,14 +17,24 @@
 package me.infuzion.web.server;
 
 import me.infuzion.web.server.event.def.PageRequestEvent;
-import me.infuzion.web.server.event.def.WebSocketConnectEvent;
 import me.infuzion.web.server.event.def.WebSocketMessageEvent;
 import me.infuzion.web.server.event.reflect.EventHandler;
 import me.infuzion.web.server.event.reflect.Route;
-import me.infuzion.web.server.event.reflect.param.Response;
+import me.infuzion.web.server.event.reflect.param.mapper.impl.BodyParam;
+import me.infuzion.web.server.event.reflect.param.mapper.impl.QueryParam;
+import me.infuzion.web.server.event.reflect.param.mapper.impl.Response;
+import me.infuzion.web.server.event.reflect.param.mapper.impl.UrlParam;
 
 import java.io.IOException;
 import java.net.InetSocketAddress;
+
+class Test {
+    public Test(String val) {
+        this.val = val;
+    }
+
+    String val;
+}
 
 public class Main {
     static {
@@ -35,6 +45,7 @@ public class Main {
         System.setProperty("java.util.logging.config.file", path);
     }
 
+
     public static void main(String[] args) throws IOException {
         int port = 9001;
         if (args.length == 1) {
@@ -42,23 +53,19 @@ public class Main {
         }
         Server server = new Server(new InetSocketAddress("0.0.0.0", port));
         server.getEventManager().registerListener(new EventListener() {
-            @EventHandler
+            @EventHandler(PageRequestEvent.class)
             @Route("*")
             @Response
-            public String a(PageRequestEvent event) {
-                return "TEST";
+            public String a(@QueryParam("test") String a) {
+                return "TEST" + a;
             }
-        });
-        server.getEventManager().registerListener(new EventListener() {
-            @EventHandler
-            public void a(WebSocketMessageEvent event) {
-                event.getClient().sendFrame(event.getOpcode(), event.getRawBuffer());
-            }
-        });
-        server.getEventManager().registerListener(new EventListener() {
-            @EventHandler
-            public void a(WebSocketConnectEvent event) {
-                event.getClient().send("onConnect fired");
+
+            @EventHandler(WebSocketMessageEvent.class)
+            @Route("/path/:id")
+            @Response
+            public Test a(@BodyParam Test t, @UrlParam("id") String id) {
+                t.val += id;
+                return t;
             }
         });
         server.start();
