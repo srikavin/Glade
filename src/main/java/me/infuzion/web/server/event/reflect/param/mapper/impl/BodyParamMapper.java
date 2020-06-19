@@ -45,8 +45,6 @@ public class BodyParamMapper implements ParamMapper<BodyParam, HasBody, Object> 
                 return event.getRawRequestData();
             }
 
-            System.out.println(event.getRequestData());
-
             return typeConverter.deserialize(event.getRequestData(), parameterType);
         }
 

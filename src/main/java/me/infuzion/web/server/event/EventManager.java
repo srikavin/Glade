@@ -135,8 +135,6 @@ public class EventManager {
             eventClass = eventClass.getSuperclass();
         }
 
-        System.out.println(listenerDataList);
-
         if (listenerDataList.isEmpty()) {
             // no registered listeners
             return;
