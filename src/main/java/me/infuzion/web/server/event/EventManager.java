@@ -16,6 +16,7 @@
 
 package me.infuzion.web.server.event;
 
+import com.google.common.flogger.FluentLogger;
 import me.infuzion.web.server.EventListener;
 import me.infuzion.web.server.event.reflect.EventControl;
 import me.infuzion.web.server.event.reflect.EventHandler;
@@ -32,6 +33,8 @@ import java.lang.reflect.Parameter;
 import java.util.*;
 
 public class EventManager {
+    private static final FluentLogger logger = FluentLogger.forEnclosingClass();
+
     private static class EventListenerData implements Comparable<EventListenerData> {
         public EventListenerData(EventListener instance,
                                  Class<? extends Event> eventType,
@@ -132,11 +135,14 @@ public class EventManager {
             eventClass = eventClass.getSuperclass();
         }
 
+        System.out.println(listenerDataList);
+
         if (listenerDataList.isEmpty()) {
             // no registered listeners
             return;
         }
 
+        outer:
         for (EventListenerData listenerData : listenerDataList) {
             // check predicates
             for (var e : listenerData.eventPredicates) {
@@ -144,14 +150,14 @@ public class EventManager {
 
                 if (!predicate.shouldCall(e.right, event)) {
                     predicate.onCallPrevented(e.right, event);
-                    return;
+                    continue outer;
                 }
             }
 
             for (EventPredicate predicate : defaultEventPredicates) {
                 if (!predicate.shouldCall(null, event)) {
                     predicate.onCallPrevented(null, event);
-                    return;
+                    continue outer;
                 }
             }
 
@@ -334,6 +340,8 @@ public class EventManager {
                 eventPredicates.add(new Pair<>(eventPredicate, annotation));
             }
         }
+
+        logger.atInfo().log("Event listener %s registered", method);
 
         EventListenerData data = new EventListenerData(listener, eventClass, priority, control, method, parameters, paramMapper, responseMapper, eventPredicates);
 

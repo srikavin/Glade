@@ -61,6 +61,11 @@ public class Main {
             }
 
             @EventHandler(WebSocketMessageEvent.class)
+            public void echo(WebSocketMessageEvent event) {
+                event.getClient().sendFrame(event.getOpcode(), event.getRawRequestData());
+            }
+
+            @EventHandler(WebSocketMessageEvent.class)
             @Route("/path/:id")
             @Response
             public Test a(@BodyParam Test t, @UrlParam("id") String id) {
