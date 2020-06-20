@@ -23,7 +23,7 @@
     <groupId>me.srikavin</groupId>
     <artifactId>Glade</artifactId>
     <packaging>jar</packaging>
-    <version>1.6.0</version>
+    <version>1.6.1</version>
 
     <properties>
         <maven.compiler.source>11</maven.compiler.source>

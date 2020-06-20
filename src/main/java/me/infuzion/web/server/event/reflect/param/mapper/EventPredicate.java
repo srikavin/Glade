@@ -57,4 +57,9 @@ public interface EventPredicate<A extends Annotation, E extends Event> extends P
      * @return True if the configuration is valid.
      */
     boolean validate(A annotation, Class<? extends Event> event);
+
+    @Override
+    default int executionOrder() {
+        return 0;
+    }
 }

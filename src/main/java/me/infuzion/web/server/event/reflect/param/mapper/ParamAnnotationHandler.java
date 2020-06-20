@@ -16,5 +16,15 @@
 
 package me.infuzion.web.server.event.reflect.param.mapper;
 
-public interface ParamAnnotationHandler {
+import org.jetbrains.annotations.NotNull;
+
+public interface ParamAnnotationHandler extends Comparable<ParamAnnotationHandler> {
+    default int executionOrder() {
+        return 100;
+    }
+
+    @Override
+    default int compareTo(@NotNull ParamAnnotationHandler o) {
+        return this.executionOrder() - o.executionOrder();
+    }
 }

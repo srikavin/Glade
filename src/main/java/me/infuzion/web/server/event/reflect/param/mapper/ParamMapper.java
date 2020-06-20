@@ -49,6 +49,5 @@ public interface ParamMapper<A extends Annotation, E extends Event, P> extends P
      * @param event         The type of event that the event handler handles.
      * @return True if the configuration is valid.
      */
-
     boolean validate(A annotation, Method method, Class<?> parameterType, Class<? extends Event> event);
 }
