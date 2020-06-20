@@ -36,6 +36,10 @@ public class BodyResponseMapper implements ResponseMapper<Response, CanSetBody, 
 
     @Override
     public void map(Response annotation, Method method, CanSetBody event, Object returnValue) {
+        if (!annotation.value().equals(Response.UNALTERED_CONTENT_TYPE)) {
+            ((CanSetHeaders) event).setResponseHeader("content-type", annotation.value());
+        }
+
         if (annotation.raw()) {
             if (returnValue instanceof ByteBuffer) {
                 event.setBody((ByteBuffer) returnValue);
@@ -46,6 +50,7 @@ public class BodyResponseMapper implements ResponseMapper<Response, CanSetBody, 
             } else {
                 throw new RuntimeException("Raw response must return byte buffer, byte[], or String!");
             }
+            return;
         }
 
         event.setResponseBody(typeConverter.serialize(returnValue));
@@ -54,7 +59,7 @@ public class BodyResponseMapper implements ResponseMapper<Response, CanSetBody, 
     @Override
     public boolean validate(Response annotation, Method method, Class<?> returnType, Class<? extends Event> event) {
         if (!CanSetHeaders.class.isAssignableFrom(event) && !annotation.value().equals(Response.UNALTERED_CONTENT_TYPE)) {
-            logger.atSevere().log("Method does not support setting content type!");
+            logger.atSevere().log("Event does not support setting content type!");
             return false;
         }
 
