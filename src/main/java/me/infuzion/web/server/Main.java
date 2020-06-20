@@ -20,10 +20,7 @@ import me.infuzion.web.server.event.def.PageRequestEvent;
 import me.infuzion.web.server.event.def.WebSocketMessageEvent;
 import me.infuzion.web.server.event.reflect.EventHandler;
 import me.infuzion.web.server.event.reflect.Route;
-import me.infuzion.web.server.event.reflect.param.mapper.impl.BodyParam;
-import me.infuzion.web.server.event.reflect.param.mapper.impl.QueryParam;
-import me.infuzion.web.server.event.reflect.param.mapper.impl.Response;
-import me.infuzion.web.server.event.reflect.param.mapper.impl.UrlParam;
+import me.infuzion.web.server.event.reflect.param.mapper.impl.*;
 
 import java.io.IOException;
 import java.net.InetSocketAddress;
@@ -56,8 +53,8 @@ public class Main {
             @EventHandler(PageRequestEvent.class)
             @Route("*")
             @Response
-            public String a(@QueryParam("test") String a) {
-                return "TEST" + a;
+            public String a(@QueryParam("test") String a, @HeaderParam("user-agent") String userAgent) {
+                return "TEST" + a + userAgent;
             }
 
             @EventHandler(WebSocketMessageEvent.class)

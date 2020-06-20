@@ -16,6 +16,7 @@
 
 package me.infuzion.web.server.http.parser;
 
+import com.google.common.flogger.FluentLogger;
 import com.google.gson.Gson;
 import com.google.gson.JsonElement;
 import com.google.gson.JsonParser;
@@ -29,6 +30,8 @@ import java.util.HashMap;
 import java.util.Map;
 
 public class JsonBodyParser implements BodyParser {
+    private static final FluentLogger logger = FluentLogger.forEnclosingClass();
+
     private final Gson gson = new Gson();
 
     @Override
@@ -46,7 +49,14 @@ public class JsonBodyParser implements BodyParser {
     public @NotNull BodyData parse(@Nullable HttpRequest request, @NotNull ByteBuffer body) {
         String json = StandardCharsets.UTF_8.decode(body).toString();
 
-        JsonElement object = JsonParser.parseString(json);
+        JsonElement object;
+
+        try {
+            object = JsonParser.parseString(json);
+        } catch (Exception e) {
+            logger.atFiner().withCause(e).log("Exception occurred while parsing json string");
+            return new BodyData(Collections.emptyMap());
+        }
 
         Map<String, BodyData.BodyField> fields = new HashMap<>();
 

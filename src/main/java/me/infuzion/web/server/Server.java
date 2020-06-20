@@ -46,7 +46,7 @@ import java.util.UUID;
 import java.util.concurrent.ConcurrentHashMap;
 
 public class Server {
-    public static final String version = "1.6.1";
+    public static final String version = "1.6.2";
     private static final FluentLogger logger = FluentLogger.forEnclosingClass();
     private final EventManager eventManager;
     private final ServerSocketChannel serverSocketChannel;
@@ -66,6 +66,7 @@ public class Server {
         eventManager.registerAnnotation(BodyParam.class, new BodyParamMapper(typeConverter));
         eventManager.registerAnnotation(QueryParam.class, new QueryParamMapper(typeConverter));
         eventManager.registerAnnotation(UrlParam.class, new UrlParamMapper(router));
+        eventManager.registerAnnotation(HeaderParam.class, new HeaderParamMapper());
         eventManager.registerAnnotation(Response.class, new BodyResponseMapper(typeConverter));
         eventManager.registerAnnotation(Route.class, new RoutePredicate(router));
 
