@@ -19,6 +19,12 @@ package me.infuzion.web.server.event.reflect.param.mapper;
 import org.jetbrains.annotations.NotNull;
 
 public interface ParamAnnotationHandler extends Comparable<ParamAnnotationHandler> {
+    /**
+     * The relative ordering of multiple annotation handlers applied to the same method. Annotation handlers with lower
+     * execution orders will be called first.
+     *
+     * @return The relative position of this annotation handler
+     */
     default int executionOrder() {
         return 100;
     }

@@ -27,6 +27,7 @@ import org.junit.jupiter.api.Test;
 import java.lang.annotation.Retention;
 import java.lang.annotation.RetentionPolicy;
 import java.lang.reflect.Method;
+import java.util.concurrent.atomic.AtomicInteger;
 
 import static org.junit.jupiter.api.Assertions.*;
 
@@ -116,6 +117,11 @@ class EventManagerTest {
 
     @Retention(RetentionPolicy.RUNTIME)
     @interface TestAnnotation {
+
+    }
+
+    @Retention(RetentionPolicy.RUNTIME)
+    @interface TestAnnotation2 {
 
     }
 
@@ -257,5 +263,120 @@ class EventManagerTest {
         assertEquals(30, event.value);
 
         assertThrows(InvalidEventConfiguration.class, () -> eventManager.registerListener(new InvalidTestListener()));
+    }
+
+    @Test
+    void predicateOrdering() {
+
+        AtomicInteger nCalled = new AtomicInteger(0);
+
+        //should be called first
+        var predicate1 = new EventPredicate<TestAnnotation, TestEvent>() {
+            @Override
+            public boolean shouldCall(TestAnnotation annotation, TestEvent event) {
+                nCalled.incrementAndGet();
+                return event.value > 10;
+            }
+
+            @Override
+            public boolean validate(TestAnnotation annotation, Class<? extends Event> event) {
+                return TestEvent.class.isAssignableFrom(event);
+            }
+
+            @Override
+            public int executionOrder() {
+                return 0;
+            }
+        };
+
+        var predicate2 = new EventPredicate<TestAnnotation2, TestEvent>() {
+            @Override
+            public boolean shouldCall(TestAnnotation2 annotation, TestEvent event) {
+                nCalled.incrementAndGet();
+                return event.value == 15;
+            }
+
+            @Override
+            public boolean validate(TestAnnotation2 annotation, Class<? extends Event> event) {
+                return TestEvent.class.isAssignableFrom(event);
+            }
+
+            @Override
+            public int executionOrder() {
+                return 100;
+            }
+        };
+
+        EventManager eventManager = new EventManager();
+        eventManager.registerAnnotation(TestAnnotation2.class, predicate2);
+        eventManager.registerAnnotation(TestAnnotation.class, predicate1);
+
+        //should be called second
+
+        AtomicInteger eventFired = new AtomicInteger(0);
+
+        eventManager.registerListener(new EventListener() {
+            @EventHandler(TestEvent.class)
+            @TestAnnotation
+            @TestAnnotation2
+            public void listener() {
+                eventFired.incrementAndGet();
+            }
+        });
+
+        eventManager.fireEvent(new TestEvent(15));
+
+        // both predicates should be called and pass
+        assertEquals(eventFired.intValue(), 1);
+        assertEquals(nCalled.intValue(), 2);
+
+
+        //ensure order does not change the behavior
+        eventManager = new EventManager();
+        eventManager.registerAnnotation(TestAnnotation2.class, predicate2);
+        eventManager.registerAnnotation(TestAnnotation.class, predicate1);
+
+        eventManager.registerListener(new EventListener() {
+            @TestAnnotation2
+            @EventHandler(TestEvent.class)
+            @TestAnnotation
+            public void listener() {
+                eventFired.incrementAndGet();
+            }
+        });
+
+        eventManager.fireEvent(new TestEvent(15));
+
+        // both predicates should be called and pass
+        assertEquals(eventFired.intValue(), 2);
+        assertEquals(nCalled.intValue(), 4);
+
+
+        eventManager = new EventManager();
+        eventManager.registerAnnotation(TestAnnotation2.class, predicate2);
+        eventManager.registerAnnotation(TestAnnotation.class, predicate1);
+
+        eventManager.registerListener(new EventListener() {
+            @TestAnnotation2
+            @EventHandler(TestEvent.class)
+            @TestAnnotation
+            public void listener() {
+                eventFired.incrementAndGet();
+            }
+        });
+
+        eventManager.fireEvent(new TestEvent(12));
+
+        // both should be called and fail
+        assertEquals(eventFired.intValue(), 2);
+        assertEquals(nCalled.intValue(), 6);
+
+
+        // only TestAnnotation's predicate should be called and fail
+        eventManager.fireEvent(new TestEvent(5));
+
+        assertEquals(eventFired.intValue(), 2);
+        assertEquals(nCalled.intValue(), 7);
+
     }
 }
