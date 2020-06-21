@@ -16,6 +16,7 @@
 
 package me.infuzion.web.server.event.def;
 
+import me.infuzion.web.server.http.parser.BodyData;
 import me.infuzion.web.server.network.websocket.WebsocketFrameOpcodes;
 import me.infuzion.web.server.websocket.WebsocketClient;
 
@@ -24,8 +25,8 @@ import java.nio.ByteBuffer;
 public class WebSocketTextMessageEvent extends WebSocketMessageEvent {
     private final String content;
 
-    public WebSocketTextMessageEvent(WebsocketClient client, ByteBuffer rawBuffer, String stringContent) {
-        super(client, WebsocketFrameOpcodes.TEXT, rawBuffer);
+    public WebSocketTextMessageEvent(WebsocketClient client, ByteBuffer rawBuffer, BodyData bodyData, String stringContent) {
+        super(client, WebsocketFrameOpcodes.TEXT, rawBuffer, bodyData);
         this.content = stringContent;
     }
 

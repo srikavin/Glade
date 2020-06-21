@@ -123,6 +123,8 @@ public class EventManager {
     public void fireEvent(Event event) {
         Class eventClass = event.getClass();
 
+        logger.atFiner().log("%s (%s) event fired", event, eventClass);
+
         List<EventListenerData> listenerDataList = new ArrayList<>();
 
         while (Event.class.isAssignableFrom(eventClass)) {
@@ -147,6 +149,7 @@ public class EventManager {
                 EventPredicate predicate = e.left;
 
                 if (!predicate.shouldCall(e.right, event)) {
+                    logger.atFiner().log("%s call prevented by predicate %s", listenerData.method, predicate.getClass());
                     predicate.onCallPrevented(e.right, event);
                     continue outer;
                 }

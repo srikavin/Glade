@@ -24,17 +24,18 @@ import me.infuzion.web.server.websocket.WebsocketClient;
 
 import java.nio.ByteBuffer;
 import java.nio.charset.StandardCharsets;
-import java.util.Collections;
 
 public abstract class WebSocketMessageEvent extends WebSocketEvent implements HasBody, CanSetBody {
     private final WebsocketFrameOpcodes opcode;
 
     private final ByteBuffer rawBuffer;
+    private final BodyData bodyData;
 
-    public WebSocketMessageEvent(WebsocketClient client, WebsocketFrameOpcodes opcode, ByteBuffer rawBuffer) {
+    public WebSocketMessageEvent(WebsocketClient client, WebsocketFrameOpcodes opcode, ByteBuffer rawBuffer, BodyData bodyData) {
         super(client);
         this.opcode = opcode;
         this.rawBuffer = rawBuffer.rewind().asReadOnlyBuffer();
+        this.bodyData = bodyData;
     }
 
     @Override
@@ -49,8 +50,7 @@ public abstract class WebSocketMessageEvent extends WebSocketEvent implements Ha
 
     @Override
     public BodyData getBodyData() {
-        //TODO: implement properly
-        return new BodyData(Collections.emptyMap());
+        return bodyData;
     }
 
     @Override

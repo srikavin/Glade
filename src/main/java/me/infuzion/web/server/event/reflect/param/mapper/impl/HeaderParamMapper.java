@@ -38,8 +38,11 @@ public class HeaderParamMapper implements ParamMapper<HeaderParam, HasHeaders, O
             return false;
         }
 
-        logger.atSevere().log("Parameters annotated with @HeaderParam must be Strings");
-
-        return String.class.isAssignableFrom(parameterType);
+        if (!String.class.isAssignableFrom(parameterType)) {
+            logger.atSevere().log("Parameters annotated with @HeaderParam must be Strings");
+            return false;
+        } else {
+            return true;
+        }
     }
 }

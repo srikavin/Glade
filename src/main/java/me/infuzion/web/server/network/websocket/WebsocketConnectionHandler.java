@@ -20,6 +20,8 @@ import com.google.common.flogger.FluentLogger;
 import me.infuzion.web.server.event.Event;
 import me.infuzion.web.server.event.def.*;
 import me.infuzion.web.server.event.reflect.param.HasPath;
+import me.infuzion.web.server.http.parser.BodyData;
+import me.infuzion.web.server.http.parser.JsonBodyParser;
 import me.infuzion.web.server.network.AbstractConnectionHandler;
 import me.infuzion.web.server.util.ByteBufferUtils;
 import org.jetbrains.annotations.Nullable;
@@ -41,6 +43,7 @@ public class WebsocketConnectionHandler extends AbstractConnectionHandler {
     private static final FluentLogger logger = FluentLogger.forEnclosingClass();
     private final Map<UUID, NetworkWebsocketClient> clientMap = Collections.synchronizedMap(new WeakHashMap<>());
     private final CharsetDecoder utf8Decoder = StandardCharsets.UTF_8.newDecoder();
+    private final JsonBodyParser bodyParser = new JsonBodyParser();
 
     @Override
     protected void handleNewClient(SocketChannel client, UUID uuid, @Nullable Event event) {
@@ -350,14 +353,16 @@ public class WebsocketConnectionHandler extends AbstractConnectionHandler {
         if (opcode == WebsocketFrameOpcodes.TEXT) {
             try {
                 String decoded = utf8Decoder.decode(consolidated).toString();
-                event = new WebSocketTextMessageEvent(client, consolidated, decoded);
+                BodyData bodyData = bodyParser.parse(decoded);
+
+                event = new WebSocketTextMessageEvent(client, consolidated, bodyData, decoded);
             } catch (CharacterCodingException e) {
                 logger.atWarning().log("Websocket client sent invalid UTF-8 data");
                 writeCloseFrame(WebsocketFrameCloseCodes.INCONSISTENT_DATA, client);
                 return;
             }
         } else if (opcode == WebsocketFrameOpcodes.BINARY) {
-            event = new WebSocketBinaryMessageEvent(client, consolidated);
+            event = new WebSocketBinaryMessageEvent(client, consolidated, new BodyData(Collections.emptyMap()));
         } else {
             logger.atWarning().log("Invalid opcode %s", opcode);
             writeCloseFrame(WebsocketFrameCloseCodes.INCONSISTENT_DATA, client);

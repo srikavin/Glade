@@ -19,10 +19,13 @@ package me.infuzion.web.server.event.reflect.param.mapper.impl;
 import com.google.common.flogger.FluentLogger;
 import me.infuzion.web.server.event.Event;
 import me.infuzion.web.server.event.reflect.Route;
+import me.infuzion.web.server.event.reflect.param.HasHttpMethod;
 import me.infuzion.web.server.event.reflect.param.HasPath;
 import me.infuzion.web.server.event.reflect.param.mapper.EventPredicate;
+import me.infuzion.web.server.router.RouteMethod;
 import me.infuzion.web.server.router.Router;
 
+import java.util.Arrays;
 import java.util.Map;
 
 public class RoutePredicate implements EventPredicate<Route, HasPath> {
@@ -36,6 +39,15 @@ public class RoutePredicate implements EventPredicate<Route, HasPath> {
     @Override
     public boolean shouldCall(Route annotation, HasPath event) {
         Map<String, String> val = router.parseDynamicSegments(annotation.value(), event);
+
+        if (event instanceof HasHttpMethod) {
+            boolean hasMethod = Arrays.stream(annotation.methods())
+                    .anyMatch(e -> e == RouteMethod.ANY || e.toHttpMethod() == ((HasHttpMethod) event).getHttpMethod());
+
+            if (!hasMethod) {
+                return false;
+            }
+        }
 
         return val != null;
     }
