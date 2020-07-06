@@ -133,14 +133,15 @@ public class HttpParser {
 
             ByteBuffer bodySlice = request.slice();
 
-            // Reset position
-            request.position(oldPos);
+            // Set request position to end of body
+            request.position(headerEndPosition + contentLength);
 
             bodySlice.limit(contentLength);
 
             partial.setBody(bodySlice);
+        } else {
+            request.position(headerEndPosition);
         }
-
         return partial;
     }
 

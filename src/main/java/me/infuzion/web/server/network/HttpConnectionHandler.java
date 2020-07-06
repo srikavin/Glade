@@ -68,18 +68,26 @@ public class HttpConnectionHandler extends AbstractConnectionHandler {
         int numRead = clientChannel.read(client.buffer);
 
         if (numRead == -1) {
-            clientChannel.close();
-            key.cancel();
-            clients.remove(uuid);
-            clientMap.remove(uuid);
+            removeClient(uuid);
             return;
         }
+
+        client.buffer.limit(client.buffer.position());
 
         HttpRequest request = parser.parse(client.buffer);
 
         if (request == null) {
             clientChannel.register(clientSelector, SelectionKey.OP_READ, uuid);
             return;
+        }
+
+        // keep remaining data in the request
+        if (client.buffer.hasRemaining()) {
+            ByteBuffer temp = ByteBuffer.allocate(1024 * 1024 * 32);
+            temp.put(client.buffer);
+            client.buffer = temp;
+        } else {
+            client.buffer = null;
         }
 
         BodyData bodyData = new BodyData(Collections.emptyMap());
@@ -103,9 +111,8 @@ public class HttpConnectionHandler extends AbstractConnectionHandler {
 
         client.headersToWrite = null;
         client.bodyToWrite = null;
-        client.buffer = null;
 
-        client.toTransfer = event.getConnectionHandler();
+        client.toTransfer = event.getConnectionHandler() == this.getClass() ? null : event.getConnectionHandler();
 
         ResponseGenerator generator = event.getResponseGenerator();
         ByteBuffer response = generator.generateResponse(event);
@@ -144,10 +151,9 @@ public class HttpConnectionHandler extends AbstractConnectionHandler {
         }
 
         if (client.headersToWrite == null && client.bodyToWrite == null) {
-            // Only transfer after writing the expected reponse data
+            // Only transfer after writing the expected response data
             if (client.toTransfer != null) {
                 ConnectionHandler handler = server.getConnectionHandler(client.toTransfer);
-
 
                 if (handler == null) {
                     logger.atSevere().log("No connection handler found for %s", client.toTransfer);
