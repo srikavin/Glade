@@ -7,7 +7,7 @@ An extensible and event-driven web server written with Java 11.
 ## Features
  - Automatic conversion to/from Objects in HTTP requests and responses
  - Fast response times with minimal overhead
- - Websocket support (WIP)
+ - Websocket support
 
 ## Usage
 
