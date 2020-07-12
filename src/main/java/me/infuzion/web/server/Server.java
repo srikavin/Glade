@@ -46,7 +46,7 @@ import java.util.UUID;
 import java.util.concurrent.ConcurrentHashMap;
 
 public class Server {
-    public static final String version = "1.6.2";
+    public static final String version = "1.6.4";
     private static final FluentLogger logger = FluentLogger.forEnclosingClass();
     private final EventManager eventManager;
     private final ServerSocketChannel serverSocketChannel;
@@ -54,12 +54,15 @@ public class Server {
     private Class<? extends ConnectionHandler> defaultHandler;
 
     public Server(InetSocketAddress address) throws IOException {
+        this(address, new DefaultTypeConverter());
+    }
+
+    public Server(InetSocketAddress address, TypeConverter typeConverter) throws IOException {
         logger.atInfo().log("Starting server at %s", address);
         serverSocketChannel = ServerSocketChannel.open();
         serverSocketChannel.bind(address);
         serverSocketChannel.configureBlocking(false);
 
-        TypeConverter typeConverter = new DefaultTypeConverter();
         Router router = new DefaultRouter();
 
         eventManager = new EventManager();

@@ -20,7 +20,15 @@ import com.google.gson.Gson;
 import com.google.gson.JsonSyntaxException;
 
 public class DefaultTypeConverter implements TypeConverter {
-    private static final Gson gson = new Gson();
+    private final Gson gson;
+
+    public DefaultTypeConverter(Gson gson) {
+        this.gson = gson;
+    }
+
+    public DefaultTypeConverter() {
+        this.gson = new Gson();
+    }
 
     @Override
     public <T> T deserialize(String content, Class<T> type) {
