@@ -26,14 +26,19 @@ import me.infuzion.web.server.event.reflect.param.mapper.InvalidEventConfigurati
 import me.infuzion.web.server.event.reflect.param.mapper.ParamMapper;
 import me.infuzion.web.server.event.reflect.param.mapper.ResponseMapper;
 import me.infuzion.web.server.util.Pair;
+import org.jetbrains.annotations.Nullable;
 
 import java.lang.annotation.Annotation;
 import java.lang.reflect.Method;
 import java.lang.reflect.Parameter;
 import java.util.*;
+import java.util.concurrent.ExecutorService;
+import java.util.concurrent.Executors;
+import java.util.function.Consumer;
 
 public class EventManager {
     private static final FluentLogger logger = FluentLogger.forEnclosingClass();
+    private final ExecutorService executor = Executors.newCachedThreadPool();
 
     private static class EventListenerData implements Comparable<EventListenerData> {
         public EventListenerData(EventListener instance,
@@ -119,8 +124,17 @@ public class EventManager {
         registeredEventPredicates.put(annotationType, predicate);
     }
 
+    public <T extends Event> void fireEvent(T event, @Nullable Consumer<T> callback) {
+        executor.submit(() -> {
+            fireEventSync(event);
+            if (callback != null) {
+                callback.accept(event);
+            }
+        }, null);
+    }
+
     @SuppressWarnings({"unchecked", "rawtypes"})
-    public void fireEvent(Event event) {
+    public void fireEventSync(Event event) {
         Class eventClass = event.getClass();
 
         logger.atFiner().log("%s (%s) event fired", event, eventClass);

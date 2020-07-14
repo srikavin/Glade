@@ -25,6 +25,7 @@ import me.infuzion.web.server.response.ResponseGenerator;
 import org.jetbrains.annotations.Nullable;
 
 import java.nio.ByteBuffer;
+import java.nio.channels.ClosedChannelException;
 import java.nio.channels.SelectionKey;
 import java.nio.channels.SocketChannel;
 import java.util.*;
@@ -58,12 +59,12 @@ public class HttpConnectionHandler extends AbstractConnectionHandler {
     protected void handleRead(SelectionKey key, UUID uuid, SocketChannel clientChannel) throws Exception {
         Client client = clientMap.get(uuid);
 
-        if (client == null) {
+        if (client == null || client.waitingForCallback) {
             return;
         }
 
         if (client.buffer == null) {
-            client.buffer = ByteBuffer.allocate(1024 * 1024 * 32);
+            client.buffer = ByteBuffer.allocate(1024 * 1024 * 2);
         }
         int numRead = clientChannel.read(client.buffer);
 
@@ -107,33 +108,58 @@ public class HttpConnectionHandler extends AbstractConnectionHandler {
 
         event.setResponseGenerator(defaultResponseGenerator);
         event.setConnectionHandler(this.getClass());
-        eventManager.fireEvent(event);
 
         client.headersToWrite = null;
         client.bodyToWrite = null;
 
-        client.toTransfer = event.getConnectionHandler() == this.getClass() ? null : event.getConnectionHandler();
+        client.waitingForCallback = true;
 
-        ResponseGenerator generator = event.getResponseGenerator();
-        ByteBuffer response = generator.generateResponse(event);
+        // unregister for read/write until response is processed
+        clientChannel.register(clientSelector, 0);
 
-        if (response == null) {
-            clientChannel.register(clientSelector, SelectionKey.OP_READ, uuid);
-            return;
-        }
+        eventManager.fireEvent(event, (updated) -> {
+            client.toTransfer = updated.getConnectionHandler() == this.getClass() ? null : updated.getConnectionHandler();
 
-        client.headersToWrite = response;
+            ResponseGenerator generator = updated.getResponseGenerator();
+            ByteBuffer response = generator.generateResponse(updated);
 
-        if (generator.shouldCopyBody(event) && event.getResponse().getBody() != null) {
-            client.bodyToWrite = event.getResponse().getBody();
-        }
+            if (response == null) {
+                try {
+                    clientChannel.register(clientSelector, SelectionKey.OP_READ, uuid);
+                } catch (ClosedChannelException e) {
+                    logger.atWarning().withCause(e).log("Exception occurred");
+                    removeClient(uuid);
+                }
+                client.waitingForCallback = false;
+                clientSelector.wakeup();
+                return;
+            }
 
-        clientChannel.register(clientSelector, SelectionKey.OP_WRITE, uuid);
+            client.headersToWrite = response;
+
+            if (generator.shouldCopyBody(updated) && updated.getResponse().getBody() != null) {
+                client.bodyToWrite = updated.getResponse().getBody();
+            }
+
+            try {
+                clientChannel.register(clientSelector, SelectionKey.OP_WRITE, uuid);
+            } catch (ClosedChannelException e) {
+                logger.atWarning().withCause(e).log("Exception occurred");
+                removeClient(uuid);
+            }
+            client.waitingForCallback = false;
+            clientSelector.wakeup();
+        });
     }
 
     @Override
     protected void handleWrite(SelectionKey key, UUID uuid, SocketChannel clientChannel) throws Exception {
         Client client = clientMap.get(uuid);
+
+        if (client.waitingForCallback) {
+            return;
+        }
+
         if (client.headersToWrite != null) {
             clientChannel.write(client.headersToWrite);
 
@@ -180,6 +206,7 @@ public class HttpConnectionHandler extends AbstractConnectionHandler {
         ByteBuffer headersToWrite = null;
         ByteBuffer bodyToWrite = null;
         PageRequestEvent event = null;
+        boolean waitingForCallback = false;
         Class<? extends ConnectionHandler> toTransfer = null;
     }
 }

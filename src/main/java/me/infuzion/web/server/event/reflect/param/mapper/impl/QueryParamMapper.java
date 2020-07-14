@@ -62,6 +62,6 @@ public class QueryParamMapper implements ParamMapper<QueryParam, HasQueryParamet
 
     @Override
     public boolean validate(QueryParam annotation, @Nullable Method method, Class<?> parameterType, Class<? extends Event> event) {
-        return HasQueryParameters.class.isAssignableFrom(event);
+        return HasQueryParameters.class.isAssignableFrom(event) && !parameterType.isPrimitive();
     }
 }

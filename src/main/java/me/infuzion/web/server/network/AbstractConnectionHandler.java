@@ -35,12 +35,12 @@ public abstract class AbstractConnectionHandler implements ConnectionHandler {
     /**
      * A set containing all of the clients managed by this connection handler.
      */
-    protected final Set<UUID> clients = Collections.newSetFromMap(new WeakHashMap<>());
+    protected final Set<UUID> clients = Collections.synchronizedSet(new HashSet<>());
 
     /**
      * A set containing all of the clients that are to be removed
      */
-    protected final Set<UUID> removedClients = Collections.newSetFromMap(new WeakHashMap<>());
+    protected final Set<UUID> removedClients = Collections.synchronizedSet(new HashSet<>());
 
     protected Server server;
     protected EventManager eventManager;
@@ -86,11 +86,17 @@ public abstract class AbstractConnectionHandler implements ConnectionHandler {
                 UUID uuid = (UUID) key.attachment();
 
                 if (!clients.contains(uuid)) {
-                    if (removedClients.contains(uuid)) {
-                        SocketChannel client = (SocketChannel) key.channel();
-                        client.close();
-                        key.cancel();
-                        removedClients.remove(uuid);
+                    try {
+                        if (removedClients.contains(uuid)) {
+                            handleRemoveClient(uuid);
+
+                            SocketChannel client = (SocketChannel) key.channel();
+                            client.close();
+                            key.cancel();
+                            removedClients.remove(uuid);
+                        }
+                    } catch (Exception e) {
+                        logger.atWarning().withCause(e).log("Exception occurred while removing client");
                     }
                     continue;
                 }
@@ -127,12 +133,6 @@ public abstract class AbstractConnectionHandler implements ConnectionHandler {
     protected void removeClient(UUID uuid) {
         clients.remove(uuid);
         removedClients.add(uuid);
-
-        try {
-            handleRemoveClient(uuid);
-        } catch (Exception e) {
-            logger.atWarning().withCause(e).log("Exception occurred while removing client");
-        }
     }
 
     protected abstract void handleRemoveClient(UUID uuid) throws Exception;

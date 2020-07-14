@@ -40,6 +40,10 @@ public class BodyResponseMapper implements ResponseMapper<Response, CanSetBody, 
             ((CanSetHeaders) event).setResponseHeader("content-type", annotation.value());
         }
 
+        if (returnValue == null) {
+            return;
+        }
+
         if (annotation.raw()) {
             if (returnValue instanceof ByteBuffer) {
                 event.setBody((ByteBuffer) returnValue);

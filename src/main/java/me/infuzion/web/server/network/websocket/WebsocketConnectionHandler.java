@@ -52,7 +52,7 @@ public class WebsocketConnectionHandler extends AbstractConnectionHandler {
             NetworkWebsocketClient websocketClient = new NetworkWebsocketClient(uuid, path);
 
             WebSocketConnectEvent connectEvent = new WebSocketConnectEvent(websocketClient, path);
-            eventManager.fireEvent(connectEvent);
+            eventManager.fireEvent(connectEvent, null);
 
             clientMap.put(uuid, websocketClient);
         } else {
@@ -71,7 +71,7 @@ public class WebsocketConnectionHandler extends AbstractConnectionHandler {
     protected void sendDisconnectEvent(NetworkWebsocketClient client, WebsocketFrameCloseCodes opcode, @Nullable String info) {
         WebSocketDisconnectEvent event = new WebSocketDisconnectEvent(client, opcode, info);
 
-        eventManager.fireEvent(event);
+        eventManager.fireEvent(event, null);
     }
 
     @Override
@@ -369,7 +369,7 @@ public class WebsocketConnectionHandler extends AbstractConnectionHandler {
             return;
         }
 
-        eventManager.fireEvent(event);
+        eventManager.fireEvent(event, null);
 
         client.reset();
     }

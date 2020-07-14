@@ -98,7 +98,7 @@ class EventManagerTest {
         EventManager eventManager = new EventManager();
         eventManager.registerListener(listener);
 
-        eventManager.fireEvent(new TestEvent());
+        eventManager.fireEventSync(new TestEvent());
 
         assertEquals(1, listener.basicListenerCalled);
         assertEquals(1, listener.legacyListenerCalled);
@@ -107,7 +107,7 @@ class EventManagerTest {
         BasicListener2 listener2 = new BasicListener2();
         eventManager.registerListener(listener2);
 
-        eventManager.fireEvent(new TestEvent());
+        eventManager.fireEventSync(new TestEvent());
 
         // full control should prevent other handlers from running
         assertEquals(1, listener.basicListenerCalled);
@@ -162,11 +162,11 @@ class EventManagerTest {
         TestListener listener = new TestListener();
         eventManager.registerListener(listener);
 
-        eventManager.fireEvent(new TestEvent(0));
+        eventManager.fireEventSync(new TestEvent(0));
 
         assertEquals(0, listener.called);
 
-        eventManager.fireEvent(new TestEvent(20));
+        eventManager.fireEventSync(new TestEvent(20));
         assertEquals(1, listener.called);
 
         assertThrows(InvalidEventConfiguration.class, () -> eventManager.registerListener(new InvalidTestListener()));
@@ -212,7 +212,7 @@ class EventManagerTest {
 
         eventManager.registerListener(listener);
 
-        eventManager.fireEvent(new TestEvent(20));
+        eventManager.fireEventSync(new TestEvent(20));
 
         assertEquals(20, listener.mappedValue);
         assertEquals(20, listener.mappedValue2);
@@ -258,7 +258,7 @@ class EventManagerTest {
 
 
         TestEvent event = new TestEvent(20);
-        eventManager.fireEvent(event);
+        eventManager.fireEventSync(event);
 
         assertEquals(30, event.value);
 
@@ -324,7 +324,7 @@ class EventManagerTest {
             }
         });
 
-        eventManager.fireEvent(new TestEvent(15));
+        eventManager.fireEventSync(new TestEvent(15));
 
         // both predicates should be called and pass
         assertEquals(eventFired.intValue(), 1);
@@ -345,7 +345,7 @@ class EventManagerTest {
             }
         });
 
-        eventManager.fireEvent(new TestEvent(15));
+        eventManager.fireEventSync(new TestEvent(15));
 
         // both predicates should be called and pass
         assertEquals(eventFired.intValue(), 2);
@@ -365,7 +365,7 @@ class EventManagerTest {
             }
         });
 
-        eventManager.fireEvent(new TestEvent(12));
+        eventManager.fireEventSync(new TestEvent(12));
 
         // both should be called and fail
         assertEquals(eventFired.intValue(), 2);
@@ -373,7 +373,7 @@ class EventManagerTest {
 
 
         // only TestAnnotation's predicate should be called and fail
-        eventManager.fireEvent(new TestEvent(5));
+        eventManager.fireEventSync(new TestEvent(5));
 
         assertEquals(eventFired.intValue(), 2);
         assertEquals(nCalled.intValue(), 7);
