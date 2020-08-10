@@ -358,8 +358,8 @@ public class EventManager {
 
         logger.atInfo().log("Event listener %s registered", method);
 
-        // sort in descending order
-        eventPredicates.sort(Comparator.comparing(o -> o.left));
+        // sort in ascending order
+        eventPredicates.sort(Comparator.comparing(o -> o.left.executionOrder()));
 
         EventListenerData data = new EventListenerData(listener, eventClass, priority, control, method, parameters, paramMapper, responseMapper, eventPredicates);
 

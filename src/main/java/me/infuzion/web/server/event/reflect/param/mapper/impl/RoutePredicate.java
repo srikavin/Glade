@@ -53,6 +53,11 @@ public class RoutePredicate implements EventPredicate<Route, HasPath> {
     }
 
     @Override
+    public int executionOrder() {
+        return -10;
+    }
+
+    @Override
     public boolean validate(Route annotation, Class<? extends Event> event) {
         return HasPath.class.isAssignableFrom(event);
     }

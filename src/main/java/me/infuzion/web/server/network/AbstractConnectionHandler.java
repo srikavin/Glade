@@ -69,6 +69,7 @@ public abstract class AbstractConnectionHandler implements ConnectionHandler {
             int readyCount = clientSelector.select();
 
             if (readyCount == 0) {
+                Thread.onSpinWait();
                 continue;
             }
 

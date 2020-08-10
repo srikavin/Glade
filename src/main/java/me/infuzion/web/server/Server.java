@@ -46,7 +46,7 @@ import java.util.UUID;
 import java.util.concurrent.ConcurrentHashMap;
 
 public class Server {
-    public static final String version = "1.7.0";
+    public static final String version = "1.7.1";
     private static final FluentLogger logger = FluentLogger.forEnclosingClass();
     private final EventManager eventManager;
     private final ServerSocketChannel serverSocketChannel;
@@ -123,6 +123,7 @@ public class Server {
             int readyCount = selector.select();
 
             if (readyCount == 0) {
+                Thread.onSpinWait();
                 continue;
             }
 

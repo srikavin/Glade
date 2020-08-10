@@ -21,7 +21,10 @@ import me.infuzion.web.server.event.EventManager;
 import me.infuzion.web.server.event.def.WebSocketDisconnectEvent;
 import me.infuzion.web.server.event.reflect.EventHandler;
 
-import java.util.*;
+import java.util.Collections;
+import java.util.HashSet;
+import java.util.Set;
+import java.util.UUID;
 
 public class WebsocketRoom {
     private final Set<WebsocketClient> clients;
@@ -41,15 +44,7 @@ public class WebsocketRoom {
     }
 
     public void removeClient(UUID uuid) {
-        Iterator<WebsocketClient> iterator = clients.iterator();
-        while (iterator.hasNext()) {
-            WebsocketClient client = iterator.next();
-
-            if (client.getId().equals(uuid)) {
-                client.remove();
-                iterator.remove();
-            }
-        }
+        clients.removeIf(client -> client.getId().equals(uuid));
     }
 
     public void removeClient(WebsocketClient client) {
