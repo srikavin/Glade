@@ -99,6 +99,7 @@ public class EventManager {
     private final List<EventPredicate<? extends Annotation, ?>> defaultEventPredicates = new ArrayList<>();
 
     public EventManager() {
+        // ensure that only listeners with the same event as the event fired are called
         this.defaultParamMappers.add(new ParamMapper<>() {
             @Override
             public Object map(Annotation annotation, Method method, Class<?> parameterType, Event event) {
@@ -124,6 +125,23 @@ public class EventManager {
         registeredEventPredicates.put(annotationType, predicate);
     }
 
+    /**
+     * Fires an event asynchronously to all registered listeners of the given event.
+     *
+     * @param event The event to fire asynchronously
+     */
+    public void fireEvent(Event event) {
+        fireEvent(event, null);
+    }
+
+    /**
+     * Fires an event asynchronously to all registered listeners of the given event. The callback will be called with the
+     * same event instance fired after all event listeners have run.
+     *
+     * @param event    The event to fire asynchronously
+     * @param callback An optional callback to view the event after all event listeners have fired
+     * @param <T>      The type of the event
+     */
     public <T extends Event> void fireEvent(T event, @Nullable Consumer<T> callback) {
         executor.submit(() -> {
             fireEventSync(event);
@@ -133,6 +151,11 @@ public class EventManager {
         }, null);
     }
 
+    /**
+     * Fires an event synchronously to all registered listeners of the given event.
+     *
+     * @param event The event to fire synchronously
+     */
     @SuppressWarnings({"unchecked", "rawtypes"})
     public void fireEventSync(Event event) {
         Class eventClass = event.getClass();
