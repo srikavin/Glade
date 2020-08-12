@@ -46,7 +46,7 @@ import java.util.UUID;
 import java.util.concurrent.ConcurrentHashMap;
 
 public class Server {
-    public static final String version = "1.7.2";
+    public static final String version = "1.7.3";
     private static final FluentLogger logger = FluentLogger.forEnclosingClass();
     private final EventManager eventManager;
     private final ServerSocketChannel serverSocketChannel;

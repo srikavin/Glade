@@ -29,6 +29,8 @@ import me.infuzion.web.server.util.Pair;
 import org.jetbrains.annotations.Nullable;
 
 import java.lang.annotation.Annotation;
+import java.lang.annotation.Retention;
+import java.lang.annotation.RetentionPolicy;
 import java.lang.reflect.Method;
 import java.lang.reflect.Parameter;
 import java.util.*;
@@ -113,15 +115,25 @@ public class EventManager {
         });
     }
 
+    private void verifyAvailableAtRuntime(Class<? extends Annotation> annotationType) {
+        if (annotationType.getAnnotation(Retention.class) == null ||
+                annotationType.getAnnotation(Retention.class).value() != RetentionPolicy.RUNTIME) {
+            throw new RuntimeException("Annotation is not available at runtime!");
+        }
+    }
+
     public <A extends Annotation> void registerAnnotation(Class<A> annotationType, ParamMapper<A, ? extends Event, ?> mapper) {
+        verifyAvailableAtRuntime(annotationType);
         registeredParamMappers.put(annotationType, mapper);
     }
 
     public <A extends Annotation> void registerAnnotation(Class<A> annotationType, ResponseMapper<A, ? extends Event, ?> mapper) {
+        verifyAvailableAtRuntime(annotationType);
         registeredResponseMappers.put(annotationType, mapper);
     }
 
     public <A extends Annotation> void registerAnnotation(Class<A> annotationType, EventPredicate<A, ? extends Event> predicate) {
+        verifyAvailableAtRuntime(annotationType);
         registeredEventPredicates.put(annotationType, predicate);
     }
 
