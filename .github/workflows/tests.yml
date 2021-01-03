@@ -22,5 +22,3 @@ jobs:
         run: mvn clean test
       - name: Upload test coverage
         uses: codecov/codecov-action@v1
-        with:
-          flags: unit-tests
