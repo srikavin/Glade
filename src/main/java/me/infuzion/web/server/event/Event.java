@@ -16,7 +16,10 @@
 
 package me.infuzion.web.server.event;
 
+import me.infuzion.web.server.performance.PerformanceMetric;
 import me.infuzion.web.server.response.ResponseGenerator;
+
+import java.util.List;
 
 public interface Event {
     default String getName() {
@@ -31,4 +34,8 @@ public interface Event {
      * The time this event was created in nanoseconds (as given by {@link System#nanoTime()}).
      */
     long getCreationTime();
+
+    List<PerformanceMetric> getPerformanceMetrics();
+
+    void setPerformanceMetrics(List<PerformanceMetric> performanceMetrics);
 }

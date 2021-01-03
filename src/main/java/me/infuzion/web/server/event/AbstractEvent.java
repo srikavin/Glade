@@ -16,12 +16,16 @@
 
 package me.infuzion.web.server.event;
 
+import me.infuzion.web.server.performance.PerformanceMetric;
 import me.infuzion.web.server.response.ResponseGenerator;
+
+import java.util.List;
 
 public abstract class AbstractEvent implements Event {
     private final long creationTime = System.nanoTime();
 
     private ResponseGenerator responseGenerator;
+    private List<PerformanceMetric> performanceMetrics;
 
     @Override
     public String getName() {
@@ -36,6 +40,16 @@ public abstract class AbstractEvent implements Event {
     @Override
     final public void setResponseGenerator(ResponseGenerator generator) {
         this.responseGenerator = generator;
+    }
+
+    @Override
+    public List<PerformanceMetric> getPerformanceMetrics() {
+        return performanceMetrics;
+    }
+
+    @Override
+    public void setPerformanceMetrics(List<PerformanceMetric> performanceMetrics) {
+        this.performanceMetrics = performanceMetrics;
     }
 
     /**

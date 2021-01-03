@@ -20,6 +20,7 @@ import me.infuzion.web.server.Server;
 import me.infuzion.web.server.event.Event;
 import me.infuzion.web.server.event.def.PageRequestEvent;
 import me.infuzion.web.server.http.HttpResponse;
+import me.infuzion.web.server.performance.PerformanceMetrics;
 
 import java.nio.ByteBuffer;
 import java.nio.charset.StandardCharsets;
@@ -51,6 +52,7 @@ public class DefaultResponseGenerator implements ResponseGenerator {
         writeHeaderLine(generated, "Connection", "Keep-Alive");
         writeHeaderLine(generated, "Keep-Alive", "timeout=5, max=1000");
         writeHeaderLine(generated, "Server", "Glade v" + Server.version);
+        writeHeaderLine(generated, "Server-Timing", PerformanceMetrics.generateServerTimingHeader());
         writeHeaders(generated, headers);
 
         long elapsedTime = System.nanoTime() - lastRequestTime;
