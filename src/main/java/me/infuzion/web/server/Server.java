@@ -76,7 +76,7 @@ public class Server {
         eventManager.registerListener(new EventListener() {
             @EventHandler(priority = EventPriority.MONITOR)
             public void handle(PageRequestEvent e) {
-                logger.atInfo().log("Served %s in %.4f ms", e.getPath(), (System.nanoTime() - e.getCreationTime()) / 1.e6);
+                logger.atInfo().log("Served %s (%d) in %.4f ms", e.getPath(), e.getResponse().getStatusCode(), (System.nanoTime() - e.getCreationTime()) / 1.e6);
             }
         });
 
