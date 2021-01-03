@@ -25,6 +25,7 @@ import me.infuzion.web.server.event.reflect.param.mapper.EventPredicate;
 import me.infuzion.web.server.event.reflect.param.mapper.InvalidEventConfiguration;
 import me.infuzion.web.server.event.reflect.param.mapper.ParamMapper;
 import me.infuzion.web.server.event.reflect.param.mapper.ResponseMapper;
+import me.infuzion.web.server.performance.PerformanceMetrics;
 import me.infuzion.web.server.util.Pair;
 import org.jetbrains.annotations.Nullable;
 
@@ -156,7 +157,9 @@ public class EventManager {
      */
     public <T extends Event> void fireEvent(T event, @Nullable Consumer<T> callback) {
         executor.submit(() -> {
-            fireEventSync(event);
+            PerformanceMetrics.setCurrentEvent(event);
+            PerformanceMetrics.addTag("AsyncEvent");
+            fireEventSyncInternal(event);
             if (callback != null) {
                 callback.accept(event);
             }
@@ -168,8 +171,14 @@ public class EventManager {
      *
      * @param event The event to fire synchronously
      */
-    @SuppressWarnings({"unchecked", "rawtypes"})
     public void fireEventSync(Event event) {
+        PerformanceMetrics.setCurrentEvent(event);
+        PerformanceMetrics.addTag("SyncEvent");
+        fireEventSyncInternal(event);
+    }
+
+    @SuppressWarnings({"unchecked", "rawtypes"})
+    private void fireEventSyncInternal(Event event) {
         Class eventClass = event.getClass();
 
         logger.atFiner().log("%s (%s) event fired", event, eventClass);
@@ -222,7 +231,9 @@ public class EventManager {
             }
 
             try {
+                PerformanceMetrics.startTimer("EventHandler-" + listenerData.method.hashCode(), listenerData.method.getDeclaringClass().getSimpleName() + "#" + listenerData.method.getName());
                 Object o = listenerData.method.invoke(listenerData.instance, params);
+                PerformanceMetrics.stopTimer("EventHandler-" + listenerData.method.hashCode());
 
                 if (listenerData.control == EventControl.FULL) {
                     // take care of autoboxing
