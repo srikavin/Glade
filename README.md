@@ -1,4 +1,4 @@
-# Glade [![Build Status](https://travis-ci.org/srikavin/Glade.svg?branch=master)](https://travis-ci.org/srikavin/Glade) [![codecov](https://codecov.io/gh/srikavin/Glade/branch/master/graph/badge.svg)](https://codecov.io/gh/srikavin/Glade) [![](https://jitpack.io/v/srikavin/Glade.svg)](https://jitpack.io/#srikavin/Glade)
+# Glade ![Run Tests](https://github.com/srikavin/Glade/workflows/Run%20Tests/badge.svg) [![codecov](https://codecov.io/gh/srikavin/Glade/branch/master/graph/badge.svg)](https://codecov.io/gh/srikavin/Glade) [![](https://jitpack.io/v/srikavin/Glade.svg)](https://jitpack.io/#srikavin/Glade)
 
 
 An extensible and event-driven web server written with Java 11.
